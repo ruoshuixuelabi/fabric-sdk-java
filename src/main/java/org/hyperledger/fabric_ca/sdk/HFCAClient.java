@@ -300,16 +300,11 @@ public class HFCAClient {
     }
 
     public static HFCAClient createNewInstance(String name, String url, Properties properties) throws MalformedURLException, InvalidArgumentException {
-
         if (name == null || name.isEmpty()) {
-
             throw new InvalidArgumentException("name must not be null or an empty string.");
         }
-
         return new HFCAClient(name, url, properties);
-
     }
-
     /**
      * Create HFCAClient from a NetworkConfig.CAInfo using default crypto suite.
      *

@@ -275,22 +275,19 @@ public class TestUtils {
 
     /**
      * Just for testing remove all peers and orderers and add them back.
-     *
+     * 仅仅是测试删除所有的peers节点信息以及orderers节点信息然后还会把他们加回去
      * @param client
      * @param channel
      */
     public static void testRemovingAddingPeersOrderers(HFClient client, Channel channel) {
         Map<Peer, Channel.PeerOptions> perm = new HashMap<>();
-
         assertTrue(channel.isInitialized());
         assertFalse(channel.isShutdown());
-
         try {
             Thread.sleep(1500); // time needed let channel get config block
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-
         channel.getPeers().forEach(peer -> {
             try {
                 perm.put(peer, channel.getPeersOptions(peer));
@@ -299,20 +296,15 @@ public class TestUtils {
                 throw new RuntimeException(e);
             }
         });
-
         perm.forEach((peer, value) -> {
             try {
-
                 Peer newPeer = client.newPeer(peer.getName(), peer.getUrl(), peer.getProperties());
                 channel.addPeer(newPeer, value);
-
             } catch (InvalidArgumentException e) {
                 throw new RuntimeException(e);
             }
         });
-
         List<Orderer> removedOrders = new ArrayList<>();
-
         for (Orderer orderer : channel.getOrderers()) {
             try {
                 channel.removeOrderer(orderer);
@@ -320,7 +312,6 @@ public class TestUtils {
             } catch (InvalidArgumentException e) {
                 throw new RuntimeException(e);
             }
-
         }
         removedOrders.forEach(orderer -> {
             try {
@@ -332,7 +323,6 @@ public class TestUtils {
 
         });
     }
-
     private static class MockPrivateKey implements PrivateKey {
         private static final long serialVersionUID = 1L;
 

@@ -64,18 +64,14 @@ public class End2endIdemixIT extends End2endIT {
      */
     public void setupUsers(SampleStore sampleStore) throws Exception {
         //SampleUser can be any implementation that implements org.hyperledger.fabric.sdk.User Interface
-
         ////////////////////////////
         // get users for all orgs
         for (SampleOrg sampleOrg : testSampleOrgs) {
             final String orgName = sampleOrg.getName();
-
             SampleUser admin = sampleStore.getMember(TEST_ADMIN_NAME, orgName);
             sampleOrg.setAdmin(admin); // The admin of this org.
-
             sampleOrg.setPeerAdmin(sampleStore.getMember(orgName + "Admin", orgName));
         }
-
         enrollIdemixUser(sampleStore);
     }
 

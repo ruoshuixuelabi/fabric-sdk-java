@@ -307,15 +307,12 @@ public class End2endAndBackAgainIT {
     void runChannel(HFClient client, Channel channel, SampleOrg sampleOrg, final int delta) {
         final String channelName = channel.getName();
         try {
-
             client.setUserContext(sampleOrg.getUser(TESTUSER_1_NAME));
-
             //This is for testing only and can be ignored.
-            testRemovingAddingPeersOrderers(client, channel);
-
+            //按照官方的注释这个方法其实根本不需要地哦啊用
+            //testRemovingAddingPeersOrderers(client, channel);
 //            final boolean changeContext = false; // BAR_CHANNEL_NAME.equals(channel.getName()) ? true : false;
             final boolean changeContext = BAR_CHANNEL_NAME.equals(channel.getName());
-
             out("Running Channel %s with a delta %d", channelName, delta);
 
             out("ChaincodeID: ", chaincodeID);

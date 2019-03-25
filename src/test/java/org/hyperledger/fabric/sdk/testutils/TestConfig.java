@@ -12,7 +12,6 @@
  *  limitations under the License.
  */
 package org.hyperledger.fabric.sdk.testutils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -28,12 +27,10 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.sdk.helper.Utils;
 import org.hyperledger.fabric.sdkintegration.SampleOrg;
-
 /**
  * Config allows for a global config of the toolkit. Central location for all
  * toolkit configuration defaults. Has a local config file that can override any
@@ -47,31 +44,25 @@ import org.hyperledger.fabric.sdkintegration.SampleOrg;
 /**
  * Test Configuration
  */
-
 public class TestConfig {
     private static final Log logger = LogFactory.getLog(TestConfig.class);
-
     private static final String DEFAULT_CONFIG = "src/test/java/org/hyperledger/fabric/sdk/testutils.properties";
     private static final String ORG_HYPERLEDGER_FABRIC_SDK_CONFIGURATION = "org.hyperledger.fabric.sdktest.configuration";
     private static final String ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST = "ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST";
     private static final String LOCALHOST = //Change test to reference another host .. easier config for my testing on Windows !
-            System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST) == null ? "localhost" : System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST);
+            System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST) == null ? "192.168.10.10" : System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST);
     //应该是基础的前缀
     private static final String PROPBASE = "org.hyperledger.fabric.sdktest.";
-
     private static final String INVOKEWAITTIME = PROPBASE + "InvokeWaitTime";
     private static final String DEPLOYWAITTIME = PROPBASE + "DeployWaitTime";
     private static final String PROPOSALWAITTIME = PROPBASE + "ProposalWaitTime";
     private static final String RUNIDEMIXMTTEST = PROPBASE + "RunIdemixMTTest";  // org.hyperledger.fabric.sdktest.RunIdemixMTTest ORG_HYPERLEDGER_FABRIC_SDKTEST_RUNIDEMIXMTTEST
-
     private static final String INTEGRATIONTESTS_ORG = PROPBASE + "integrationTests.org.";
     private static final Pattern orgPat = Pattern.compile("^" + Pattern.quote(INTEGRATIONTESTS_ORG) + "([^\\.]+)\\.mspid$");
-
     private static final String INTEGRATIONTESTSTLS = PROPBASE + "integrationtests.tls";
     // location switching between fabric cryptogen and configtxgen artifacts for v1.0 and v1.1 in src/test/fixture/sdkintegration/e2e-2Orgs
     private String FAB_CONFIG_GEN_VERS;
     //   Objects.equals(System.getenv("ORG_HYPERLEDGER_FABRIC_SDKTEST_VERSION"), "1.0.0") ? "v1.0" : "v1.3";
-
     private static TestConfig config;
     //SDK的配置的属性
     private static final Properties sdkProperties = new Properties();
@@ -79,11 +70,9 @@ public class TestConfig {
     private final boolean runningTLS;
     //在TLS模式下访问的http修改为https
     private final boolean runningFabricCATLS;
-
     public boolean isRunningFabricTLS() {
         return runningFabricTLS;
     }
-    
     //是否运行在TLS模式下,会把上面的runningTLS变量赋值给这里
     private final boolean runningFabricTLS;
     //定义一个集合,保存一些样品组织Orgs
@@ -107,10 +96,8 @@ public class TestConfig {
         if (FAB_CONFIG_GEN_VERS.equalsIgnoreCase("v1.4")) {
             FAB_CONFIG_GEN_VERS = "v1.3";
         }
-
         File loadFile;
         FileInputStream configProps;
-
         try {
             //加入配置文件,但是这个配置文件不存在
             loadFile = new File(System.getProperty(ORG_HYPERLEDGER_FABRIC_SDK_CONFIGURATION, DEFAULT_CONFIG)).getAbsoluteFile();
@@ -184,11 +171,8 @@ public class TestConfig {
                         sampleOrg.addEventHubLocation(nl[0], grpcTLSify(nl[1]));
                     }
                 }
-
                 sampleOrg.setCALocation(httpTLSify(sdkProperties.getProperty((INTEGRATIONTESTS_ORG + org.getKey() + ".ca_location"))));
-
                 sampleOrg.setCAName(sdkProperties.getProperty((INTEGRATIONTESTS_ORG + org.getKey() + ".caName")));
-
                 if (runningFabricCATLS) {
                     String cert = "src/test/fixture/sdkintegration/e2e-2Orgs/FAB_CONFIG_GEN_VERS/crypto-config/peerOrganizations/DNAME/ca/ca.DNAME-cert.pem"
                             .replaceAll("DNAME", domainName).replaceAll("FAB_CONFIG_GEN_VERS", FAB_CONFIG_GEN_VERS);
@@ -198,23 +182,16 @@ public class TestConfig {
                     }
                     Properties properties = new Properties();
                     properties.setProperty("pemFile", cf.getAbsolutePath());
-
                     properties.setProperty("allowAllHostNames", "true"); //testing environment only NOT FOR PRODUCTION!
-
                     sampleOrg.setCAProperties(properties);
                 }
             }
-
         }
-
     }
-
     public String getFabricConfigGenVers() {
         return FAB_CONFIG_GEN_VERS;
     }
-
     public boolean isFabricVersionAtOrAfter(String version) {
-
         final int[] vers = parseVersion(version);
         for (int i = 0; i < 3; ++i) {
             if (vers[i] > fabricVersion[i]) {
@@ -223,12 +200,9 @@ public class TestConfig {
         }
         return true;
     }
-
     public boolean isFabricVersionBefore(String version) {
-
         return !isFabricVersionAtOrAfter(version);
     }
-
     private static int[] parseVersion(String version) {
         if (null == version || version.isEmpty()) {
             throw new AssertionError("Version is bad :" + version);
@@ -259,17 +233,13 @@ public class TestConfig {
                 location.replaceFirst("^grpc://", "grpcs://") : location;
 
     }
-
     private String httpTLSify(String location) {
         location = location.trim();
-
         return runningFabricCATLS ?
                 location.replaceFirst("^http://", "https://") : location;
     }
-
     /**
      * getConfig return back singleton for SDK configuration.
-     *
      * @return Global configuration
      */
     public static TestConfig getConfig() {
@@ -277,15 +247,11 @@ public class TestConfig {
             config = new TestConfig();
         }
         return config;
-
     }
-
     public void destroy() {
         // config.sampleOrgs = null;
         config = null;
-
     }
-
     /**
      * getProperty return back property for the given value.
      *
