@@ -11,9 +11,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.hyperledger.fabric.sdkintegration;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -32,7 +30,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
+import lombok.Data;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,12 +44,11 @@ import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.HFClient;
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
-
 /**
  * A local file-based key value store.
  */
+@Data
 public class SampleStore {
-
     private String file;
     private Log logger = LogFactory.getLog(SampleStore.class);
     private CryptoSuite cryptoSuite;
@@ -127,20 +124,15 @@ public class SampleStore {
      * @return user
      */
     public SampleUser getMember(String name, String org) {
-
         // Try to get the SampleUser state from the cache
         SampleUser sampleUser = members.get(SampleUser.toKeyValStoreName(name, org));
         if (null != sampleUser) {
             return sampleUser;
         }
-
         // Create the SampleUser and try to restore it's state from the key value store (if found).
         sampleUser = new SampleUser(name, org, this, cryptoSuite);
-
         return sampleUser;
-
     }
-
     /**
      * Check if store has user.
      *

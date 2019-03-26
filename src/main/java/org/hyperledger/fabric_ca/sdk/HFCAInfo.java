@@ -15,11 +15,12 @@
  */
 
 package org.hyperledger.fabric_ca.sdk;
-
+import lombok.Data;
 /**
  * Fabric Certificate authority information
  * Contains information for the Fabric certificate authority
  */
+@Data
 public class HFCAInfo {
 
     private final String caName;

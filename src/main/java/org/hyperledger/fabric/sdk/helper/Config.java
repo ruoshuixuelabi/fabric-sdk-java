@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import lombok.Data;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
@@ -39,7 +40,7 @@ import static java.lang.String.format;
  * with a java system property. Property hierarchy goes System property
  * overrides environment variable which overrides config file for default values specified here.
  */
-
+@Data
 public class Config {
     private static final Log logger = LogFactory.getLog(Config.class);
 

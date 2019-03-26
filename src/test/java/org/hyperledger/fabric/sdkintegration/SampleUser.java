@@ -11,9 +11,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.hyperledger.fabric.sdkintegration;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -21,9 +19,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Set;
-
 import io.netty.util.internal.StringUtil;
-
+import lombok.Data;
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.fabric.sdk.Enrollment;
 import org.hyperledger.fabric.sdk.User;
@@ -32,11 +29,9 @@ import org.hyperledger.fabric_ca.sdk.EnrollmentRequest;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.exception.EnrollmentException;
 import org.hyperledger.fabric_ca.sdk.exception.InvalidArgumentException;
-
-
+@Data
 public class SampleUser implements User, Serializable {
     private static final long serialVersionUID = 8077132186383604355L;
-
     private String name;
     private Set<String> roles;
     private String account;
@@ -44,16 +39,12 @@ public class SampleUser implements User, Serializable {
     private String organization;
     private String enrollmentSecret;
     Enrollment enrollment = null; //need access in test env.
-
     private transient SampleStore keyValStore;
     private String keyValStoreName;
-
     private transient CryptoSuite cryptoSuite;
-
     public SampleUser(String name, String org, SampleStore fs, CryptoSuite cryptoSuite) {
         this.name = name;
         this.cryptoSuite = cryptoSuite;
-
         this.keyValStore = fs;
         this.organization = org;
         this.keyValStoreName = toKeyValStoreName(this.name, org);
@@ -63,75 +54,57 @@ public class SampleUser implements User, Serializable {
         } else {
             restoreState();
         }
-
     }
-
     static boolean isStored(String name, String org, SampleStore fs) {
-
         return fs.hasValue(toKeyValStoreName(name, org));
     }
-
     @Override
     public String getName() {
         return this.name;
     }
-
     @Override
     public Set<String> getRoles() {
         return this.roles;
     }
-
     public void setRoles(Set<String> roles) {
-
         this.roles = roles;
         saveState();
     }
-
     @Override
     public String getAccount() {
         return this.account;
     }
-
     /**
      * Set the account.
-     *
      * @param account The account.
      */
     public void setAccount(String account) {
-
         this.account = account;
         saveState();
     }
-
     @Override
     public String getAffiliation() {
         return this.affiliation;
     }
-
     /**
      * Set the affiliation.
-     *
      * @param affiliation the affiliation.
      */
     public void setAffiliation(String affiliation) {
         this.affiliation = affiliation;
         saveState();
     }
-
     @Override
     public Enrollment getEnrollment() {
         return this.enrollment;
     }
-
     /**
      * Determine if this name has been registered.
-     *
      * @return {@code true} if registered; otherwise {@code false}.
      */
     public boolean isRegistered() {
         return !StringUtil.isNullOrEmpty(enrollmentSecret);
     }
-
     /**
      * Determine if this name has been enrolled.
      *

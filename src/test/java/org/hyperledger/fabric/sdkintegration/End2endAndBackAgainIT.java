@@ -11,9 +11,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.hyperledger.fabric.sdkintegration;
-
 import java.io.File;
 import java.net.MalformedURLException;
 import java.nio.file.Paths;
@@ -31,7 +29,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.hyperledger.fabric.protos.common.Configtx;
 import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
 import org.hyperledger.fabric.sdk.BlockEvent;
@@ -64,7 +61,6 @@ import org.hyperledger.fabric.sdk.testutils.TestUtils;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.junit.Before;
 import org.junit.Test;
-
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hyperledger.fabric.sdk.BlockInfo.EnvelopeType.TRANSACTION_ENVELOPE;
@@ -77,183 +73,164 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 /**
  * Test end to end scenario
  */
 public class End2endAndBackAgainIT {
-
     private static final TestConfig testConfig = TestConfig.getConfig();
     private static final int DEPLOYWAITTIME = testConfig.getDeployWaitTime();
     private static final boolean IS_FABRIC_V10 = testConfig.isRunningAgainstFabric10();
     private static final String TEST_ADMIN_NAME = "admin";
     private static final String TESTUSER_1_NAME = "user1";
     private static final String TEST_FIXTURES_PATH = "src/test/fixture";
-
     private static final String FOO_CHANNEL_NAME = "foo";
     private static final String BAR_CHANNEL_NAME = "bar";
     private final TestConfigHelper configHelper = new TestConfigHelper();
     String testTxID = null;  // save the CC invoke TxID and use in queries
     SampleStore sampleStore;
     private Collection<SampleOrg> testSampleOrgs;
-
     String testName = "End2endAndBackAgainIT";
-
     String CHAIN_CODE_FILEPATH = "sdkintegration/gocc/sample_11";
     String CHAIN_CODE_NAME = "example_cc_go";
     String CHAIN_CODE_PATH = "github.com/example_cc";
     String CHAIN_CODE_VERSION_11 = "11";
     String CHAIN_CODE_VERSION = "1";
     TransactionRequest.Type CHAIN_CODE_LANG = TransactionRequest.Type.GO_LANG;
-
     ChaincodeID chaincodeID = ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
             .setVersion(CHAIN_CODE_VERSION)
             .setPath(CHAIN_CODE_PATH).build();
     ChaincodeID chaincodeID_11 = ChaincodeID.newBuilder().setName(CHAIN_CODE_NAME)
             .setVersion(CHAIN_CODE_VERSION_11)
             .setPath(CHAIN_CODE_PATH).build();
-
-    private static boolean checkInstalledChaincode(HFClient client, Peer peer, String ccName, String ccPath, String ccVersion) throws InvalidArgumentException, ProposalException {
-
+    /**
+     * 检查链码是否已经安装
+     * @param client SDK的客户端实例
+     * @param peer 要检查的链码的所在peer节点
+     * @param ccName 链码的名字
+     * @param ccPath 链码的安装路径
+     * @param ccVersion 链码的版本
+     * @return
+     * @throws InvalidArgumentException
+     * @throws ProposalException
+     */
+    private static boolean checkInstalledChaincode(HFClient client, Peer peer, String ccName, String ccPath, String ccVersion)
+            throws InvalidArgumentException, ProposalException {
         out("Checking installed chaincode: %s, at version: %s, on peer: %s", ccName, ccVersion, peer.getName());
+        //查询相应的peer节点的链码列表
         List<ChaincodeInfo> ccinfoList = client.queryInstalledChaincodes(peer);
-
         boolean found = false;
-
         for (ChaincodeInfo ccifo : ccinfoList) {
-
             if (ccPath != null) {
                 found = ccName.equals(ccifo.getName()) && ccPath.equals(ccifo.getPath()) && ccVersion.equals(ccifo.getVersion());
                 if (found) {
                     break;
                 }
             }
-
             found = ccName.equals(ccifo.getName()) && ccVersion.equals(ccifo.getVersion());
             if (found) {
                 break;
             }
-
         }
-
         return found;
     }
-
+    /**
+     * 检查是否实例化了链码
+     * @param channel
+     * @param peer
+     * @param ccName
+     * @param ccPath
+     * @param ccVersion
+     * @return
+     * @throws InvalidArgumentException
+     * @throws ProposalException
+     */
     private static boolean checkInstantiatedChaincode(Channel channel, Peer peer, String ccName, String ccPath, String ccVersion) throws InvalidArgumentException, ProposalException {
         out("Checking instantiated chaincode: %s, at version: %s, on peer: %s", ccName, ccVersion, peer.getName());
+        //查询相应的peer节点上所有实例化的链码的列表集合
         List<ChaincodeInfo> ccinfoList = channel.queryInstantiatedChaincodes(peer);
-
         boolean found = false;
-
         for (ChaincodeInfo ccifo : ccinfoList) {
-
             if (ccPath != null) {
                 found = ccName.equals(ccifo.getName()) && ccPath.equals(ccifo.getPath()) && ccVersion.equals(ccifo.getVersion());
                 if (found) {
                     break;
                 }
             }
-
             found = ccName.equals(ccifo.getName()) && ccVersion.equals(ccifo.getVersion());
             if (found) {
                 break;
             }
-
         }
-
         return found;
     }
-
     static void out(String format, Object... args) {
-
         System.err.flush();
         System.out.flush();
-
         System.out.println(format(format, args));
         System.err.flush();
         System.out.flush();
-
     }
-
     @Before
     public void checkConfig() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, MalformedURLException {
-
         out("\n\n\nRUNNING: %s.\n", testName);
-
-        //      configHelper.clearConfig();
+        //configHelper.clearConfig();
         resetConfig();
         configHelper.customizeConfig();
-        //      assertEquals(256, Config.getConfig().getSecurityLevel());
-
+        //assertEquals(256, Config.getConfig().getSecurityLevel());
         testSampleOrgs = testConfig.getIntegrationTestsSampleOrgs();
         //Set up hfca for each sample org
-
         for (SampleOrg sampleOrg : testSampleOrgs) {
             String caURL = sampleOrg.getCALocation();
             sampleOrg.setCAClient(HFCAClient.createNewInstance(caURL, null));
         }
     }
-
     File sampleStoreFile = new File(System.getProperty("java.io.tmpdir") + "/HFCSampletest.properties");
-
     @Test
     public void setup() throws Exception {
-
         try {
-
             // client.setMemberServices(peerOrg1FabricCA);
-
             //Persistence is not part of SDK. Sample file store is for demonstration purposes only!
             //   MUST be replaced with more robust application implementation  (Database, LDAP)
-
 //            if (sampleStoreFile.exists()) { //For testing start fresh
 //                sampleStoreFile.delete();
 //            }
             sampleStore = new SampleStore(sampleStoreFile);
-
             setupUsers(sampleStore);
             runFabricTest(sampleStore);
-
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());
         }
     }
-
     /**
      * Will register and enroll users persisting them to samplestore.
-     *
      * @param sampleStore
      * @throws Exception
      */
     public void setupUsers(SampleStore sampleStore) {
         //SampleUser can be any implementation that implements org.hyperledger.fabric.sdk.User Interface
-
         ////////////////////////////
         // get users for all orgs
+        //获取所哟肚饿组织成员
         for (SampleOrg sampleOrg : testSampleOrgs) {
             final String orgName = sampleOrg.getName();
-
+            System.out.println("sampleStore="+sampleStore);
+            //从sampleStore获取Member,这里肯定获取不到,而是内部自己创建了一个
             SampleUser admin = sampleStore.getMember(TEST_ADMIN_NAME, orgName);
+            System.out.println("获取到的admin="+admin);
             sampleOrg.setAdmin(admin); // The admin of this org.
-
             // No need to enroll or register all done in End2endIt !
             SampleUser user = sampleStore.getMember(TESTUSER_1_NAME, orgName);
             sampleOrg.addUser(user);  //Remember user belongs to this Org
-
             sampleOrg.setPeerAdmin(sampleStore.getMember(orgName + "Admin", orgName));
         }
     }
-
     public void runFabricTest(final SampleStore sampleStore) throws Exception {
         ////////////////////////////
         // Setup client
-
         //Create instance of client.
         HFClient client = HFClient.createNewInstance();
-
         client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
-
         ////////////////////////////
         //Reconstruct and run the channels
         SampleOrg sampleOrg = testConfig.getIntegrationTestsSampleOrg("peerOrg1");
@@ -264,43 +241,32 @@ public class End2endAndBackAgainIT {
         fooChannel.shutdown(true); //clean up resources no longer needed.
         assertTrue(fooChannel.isShutdown());
         out("\n");
-
         sampleOrg = testConfig.getIntegrationTestsSampleOrg("peerOrg2");
         Channel barChannel = reconstructChannel(BAR_CHANNEL_NAME, client, sampleOrg);
         runChannel(client, barChannel, sampleOrg, 100); //run a newly constructed foo channel with different b value!
         assertFalse(barChannel.isShutdown());
         assertTrue(barChannel.isInitialized());
-
         if (!testConfig.isRunningAgainstFabric10()) { //Peer eventing service support started with v1.1
-
             // Now test replay feature of V1.1 peer eventing services.
             byte[] replayChannelBytes = barChannel.serializeChannel();
             barChannel.shutdown(true);
-
             Channel replayChannel = client.deSerializeChannel(replayChannelBytes);
-
             out("doing testPeerServiceEventingReplay,0,-1,false");
             testPeerServiceEventingReplay(client, replayChannel, 0L, -1L, false);
-
             replayChannel = client.deSerializeChannel(replayChannelBytes);
             out("doing testPeerServiceEventingReplay,0,-1,true"); // block 0 is import to test
             testPeerServiceEventingReplay(client, replayChannel, 0L, -1L, true);
-
             //Now do it again starting at block 1
             replayChannel = client.deSerializeChannel(replayChannelBytes);
             out("doing testPeerServiceEventingReplay,1,-1,false");
             testPeerServiceEventingReplay(client, replayChannel, 1L, -1L, false);
-
             //Now do it again starting at block 2 to 3
             replayChannel = client.deSerializeChannel(replayChannelBytes);
             out("doing testPeerServiceEventingReplay,2,3,false");
             testPeerServiceEventingReplay(client, replayChannel, 2L, 3L, false);
-
         }
-
         out("That's all folks!");
     }
-
     // Disable MethodLength as this method is for instructional purposes and hence
     // we don't want to split it into smaller pieces
     // CHECKSTYLE:OFF: MethodLength
@@ -314,32 +280,23 @@ public class End2endAndBackAgainIT {
 //            final boolean changeContext = false; // BAR_CHANNEL_NAME.equals(channel.getName()) ? true : false;
             final boolean changeContext = BAR_CHANNEL_NAME.equals(channel.getName());
             out("Running Channel %s with a delta %d", channelName, delta);
-
             out("ChaincodeID: ", chaincodeID);
             ////////////////////////////
             // Send Query Proposal to all peers see if it's what we expect from end of End2endIT
             //
             queryChaincodeForExpectedValue(client, channel, "" + (300 + delta), chaincodeID);
-
             //Set user context on client but use explicit user contest on each call.
             if (changeContext) {
                 client.setUserContext(sampleOrg.getUser(TESTUSER_1_NAME));
-
             }
-
             // exercise v1 of chaincode
-
             moveAmount(client, channel, chaincodeID, "25", changeContext ? sampleOrg.getPeerAdmin() : null).thenApply((BlockEvent.TransactionEvent transactionEvent) -> {
                 try {
-
                     waitOnFabric();
                     client.setUserContext(sampleOrg.getUser(TESTUSER_1_NAME));
-
                     queryChaincodeForExpectedValue(client, channel, "" + (325 + delta), chaincodeID);
-
                     //////////////////
                     // Start of upgrade first must install it.
-
                     client.setUserContext(sampleOrg.getPeerAdmin());
                     ///////////////
                     ////
@@ -350,13 +307,10 @@ public class End2endAndBackAgainIT {
                     installProposalRequest.setChaincodeVersion(CHAIN_CODE_VERSION_11);
                     installProposalRequest.setProposalWaitTime(testConfig.getProposalWaitTime());
                     installProposalRequest.setChaincodeLanguage(CHAIN_CODE_LANG);
-
                     if (changeContext) {
                         installProposalRequest.setUserContext(sampleOrg.getPeerAdmin());
                     }
-
                     out("Sending install proposal for channel: %s", channel.getName());
-
                     ////////////////////////////
                     // only a client from the same org as the peer can issue an install request
                     int numInstallProposal = 0;
@@ -439,59 +393,39 @@ public class End2endAndBackAgainIT {
 
                     if (changeContext) {
                         return channel.sendTransaction(successful, sampleOrg.getPeerAdmin()).get(testConfig.getTransactionWaitTime(), TimeUnit.SECONDS);
-
                     } else {
-
                         return channel.sendTransaction(successful).get(testConfig.getTransactionWaitTime(), TimeUnit.SECONDS);
-
                     }
-
                 } catch (CompletionException e) {
                     throw e;
                 } catch (Exception e) {
                     throw new CompletionException(e);
                 }
-
             }).thenApply(transactionEvent -> {
                 try {
                     waitOnFabric(10000);
-
                     out("Chaincode has been upgraded to version %s", CHAIN_CODE_VERSION_11);
-
                     //Check to see if peers have new chaincode and old chaincode is gone.
-
                     client.setUserContext(sampleOrg.getPeerAdmin());
                     for (Peer peer : channel.getPeers()) {
-
                         if (!checkInstalledChaincode(client, peer, CHAIN_CODE_NAME, CHAIN_CODE_PATH, CHAIN_CODE_VERSION_11)) {
-
                             fail(format("Peer %s is missing installed chaincode name:%s, path:%s, version: %s",
                                     peer, CHAIN_CODE_NAME, CHAIN_CODE_PATH, CHAIN_CODE_VERSION_11));
-
                         }
-
                         //should be instantiated too..
                         if (!checkInstantiatedChaincode(channel, peer, CHAIN_CODE_NAME, CHAIN_CODE_PATH, CHAIN_CODE_VERSION_11)) {
-
                             fail(format("Peer %s is missing instantiated chaincode name:%s, path:%s, version: %s",
                                     peer, CHAIN_CODE_NAME, CHAIN_CODE_PATH, CHAIN_CODE_VERSION_11));
-
                         }
-
                         if (checkInstantiatedChaincode(channel, peer, CHAIN_CODE_NAME, CHAIN_CODE_PATH, CHAIN_CODE_VERSION)) {
-
                             fail(format("Peer %s still has old instantiated chaincode name:%s, path:%s, version: %s",
                                     peer, CHAIN_CODE_NAME, CHAIN_CODE_PATH, CHAIN_CODE_VERSION));
                         }
-
                     }
-
                     client.setUserContext(sampleOrg.getUser(TESTUSER_1_NAME));
-
                     ///Check if we still get the same value on the ledger
                     out("delta is %s", delta);
                     queryChaincodeForExpectedValue(client, channel, "" + (325 + delta), chaincodeID);
-
                     //Now lets run the new chaincode which should *double* the results we asked to move.
                     return moveAmount(client, channel, chaincodeID_11, "50",
                             changeContext ? sampleOrg.getPeerAdmin() : null).get(testConfig.getTransactionWaitTime(), TimeUnit.SECONDS); // really move 100
@@ -500,13 +434,9 @@ public class End2endAndBackAgainIT {
                 } catch (Exception e) {
                     throw new CompletionException(e);
                 }
-
             }).thenApply(transactionEvent -> {
-
                 waitOnFabric(10000);
-
                 queryChaincodeForExpectedValue(client, channel, "" + (425 + delta), chaincodeID_11);
-
                 return null;
             }).exceptionally(e -> {
                 if (e instanceof CompletionException && e.getCause() != null) {
@@ -515,30 +445,23 @@ public class End2endAndBackAgainIT {
                 if (e instanceof TransactionEventException) {
                     BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
                     if (te != null) {
-
                         e.printStackTrace(System.err);
                         fail(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()));
                     }
                 }
-
                 e.printStackTrace(System.err);
                 fail(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()));
-
                 return null;
             }).get(testConfig.getTransactionWaitTime(), TimeUnit.SECONDS);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
         out("Running for Channel %s done", channelName);
-
     }
-
     CompletableFuture<BlockEvent.TransactionEvent> moveAmount(HFClient client, Channel channel, ChaincodeID chaincodeID, String moveAmount, User user) {
-
         try {
             Collection<ProposalResponse> successful = new LinkedList<>();
             Collection<ProposalResponse> failed = new LinkedList<>();
-
             ///////////////
             /// Send transaction proposal to all peers
             TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
@@ -930,21 +853,17 @@ public class End2endAndBackAgainIT {
     }
 
     private void queryChaincodeForExpectedValue(HFClient client, Channel channel, final String expect, ChaincodeID chaincodeID) {
-
         out("Now query chaincode %s on channel %s for the value of b expecting to see: %s", chaincodeID, channel.getName(), expect);
         QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
         queryByChaincodeRequest.setArgs("b".getBytes(UTF_8)); // test using bytes as args. End2end uses Strings.
         queryByChaincodeRequest.setFcn("query");
         queryByChaincodeRequest.setChaincodeID(chaincodeID);
-
         Collection<ProposalResponse> queryProposals;
-
         try {
             queryProposals = channel.queryByChaincode(queryByChaincodeRequest);
         } catch (Exception e) {
             throw new CompletionException(e);
         }
-
         for (ProposalResponse proposalResponse : queryProposals) {
             if (!proposalResponse.isVerified() || proposalResponse.getStatus() != Status.SUCCESS) {
                 fail("Failed query proposal from peer " + proposalResponse.getPeer().getName() + " status: " + proposalResponse.getStatus() +
@@ -958,15 +877,10 @@ public class End2endAndBackAgainIT {
             }
         }
     }
-
     private void waitOnFabric() {
-
         waitOnFabric(0);
     }
-
     ///// NO OP ... leave in case it's needed.
     private void waitOnFabric(int additional) {
-
     }
-
 }

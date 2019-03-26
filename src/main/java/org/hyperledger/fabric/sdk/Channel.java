@@ -58,6 +58,7 @@ import java.util.regex.Pattern;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import io.grpc.StatusRuntimeException;
+import lombok.Data;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -141,6 +142,7 @@ import static org.hyperledger.fabric.sdk.transaction.ProtoUtils.getSignatureHead
  * The class representing a channel with which the client SDK interacts.
  * <p>
  */
+@Data
 public class Channel implements Serializable {
     private static final long serialVersionUID = -3266164166893832538L;
     private static final Config config = Config.getConfig();

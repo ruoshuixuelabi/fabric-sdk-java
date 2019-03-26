@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import lombok.Data;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hyperledger.fabric.protos.peer.Query.ChaincodeInfo;
@@ -49,7 +50,7 @@ import org.hyperledger.fabric.sdk.security.CryptoSuite;
 
 import static java.lang.String.format;
 import static org.hyperledger.fabric.sdk.User.userContextCheck;
-
+@Data
 public class HFClient {
     private static final Config config = Config.getConfig(); // never remove this! config needs to load first.
 

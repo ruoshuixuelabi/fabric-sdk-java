@@ -11,22 +11,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.hyperledger.fabric.sdk;
-
 import java.util.Set;
-
 import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
 import org.hyperledger.fabric.sdk.helper.Utils;
 import org.hyperledger.fabric.sdk.identity.X509Enrollment;
-
 import static java.lang.String.format;
-
 /**
  * User - Is the interface needed to be implemented by embedding application of the SDK
  */
 public interface User {
-
     /**
      * Get the name that identifies the user.
      *

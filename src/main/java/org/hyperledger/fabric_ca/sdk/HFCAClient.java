@@ -62,6 +62,7 @@ import javax.net.ssl.X509TrustManager;
 import javax.xml.bind.DatatypeConverter;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import lombok.Data;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
@@ -132,7 +133,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * HFCAClient Hyperledger Fabric Certificate Authority Client.
  */
-
+@Data
 public class HFCAClient {
     private static final Config config = Config.getConfig();  // DO NOT REMOVE THIS IS NEEDED TO MAKE SURE WE FIRST LOAD CONFIG!!!
     /**

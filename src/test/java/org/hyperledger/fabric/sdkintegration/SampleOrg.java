@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import lombok.Data;
 import org.hyperledger.fabric.sdk.User;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 
@@ -30,6 +31,7 @@ import org.hyperledger.fabric_ca.sdk.HFCAClient;
  * Keeps track which resources are defined for the Organization it represents.
  *
  */
+@Data
 public class SampleOrg {
     final String name;
     final String mspid;

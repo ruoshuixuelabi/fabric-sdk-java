@@ -156,10 +156,13 @@ public class End2endIT {
         //Set up hfca for each sample org
         //循环遍历上面获取到的组织信息
         for (SampleOrg sampleOrg : testSampleOrgs) {
+            System.out.println("获取到的每一个示例组织信息是sampleOrg="+sampleOrg);
+            //这个时候的SampleOrg还没有设置CAClient的字段
             //获取每一个组织的caName
             String caName = sampleOrg.getCAName(); //Try one of each name and no name.
             //如果caName不是空的时候
             if (caName != null && !caName.isEmpty()) {
+                System.out.println("caName不是空的通过caName设置设置CAClient");
                 //设置CAClient,参数为caName,以及caName的url地址和Properties配置文件
                 sampleOrg.setCAClient(HFCAClient.createNewInstance(caName, sampleOrg.getCALocation(), sampleOrg.getCAProperties()));
             } else {
@@ -180,6 +183,7 @@ public class End2endIT {
         }
         //新创建例子的存储
         sampleStore = new SampleStore(sampleStoreFile);
+        System.out.println("示例存储的内容是sampleStore="+sampleStore);
         //用户背书的步骤？？？、
         enrollUsersSetup(sampleStore); //This enrolls users with fabric ca and setups sample store to get users later.
         //执行Fabric的测试
@@ -196,6 +200,7 @@ public class End2endIT {
         //创建HFClient客户的实例
         //Create instance of client.
         HFClient client = HFClient.createNewInstance();
+        System.out.println("执行测试用例的时候的HFClient="+client);
         System.out.println("运行测试的时候测试setCryptoSuite="+CryptoSuite.Factory.getCryptoSuite());
         //设置客户的成员适配
         client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
@@ -205,8 +210,10 @@ public class End2endIT {
         SampleOrg sampleOrg = testConfig.getIntegrationTestsSampleOrg("peerOrg1");
         //根据条件初始化Channel
         Channel fooChannel = constructChannel(FOO_CHANNEL_NAME, client, sampleOrg);
+        System.out.println("这个时候创建的Channel信息为Channel=fooChannel="+fooChannel);
         //把初始化的Channel保存起来sampleStore
         sampleStore.saveChannel(fooChannel);
+        System.out.println("初始化foochannel之后的sampleStore="+sampleStore);
         //运行初始化的Channel
         runChannel(client, fooChannel, true, sampleOrg, 0);
         assertFalse(fooChannel.isShutdown());
@@ -215,7 +222,9 @@ public class End2endIT {
         assertNull(client.getChannel(FOO_CHANNEL_NAME));
         out("\n");
         sampleOrg = testConfig.getIntegrationTestsSampleOrg("peerOrg2");
+        //这里是创建bar这个Channel的
         Channel barChannel = constructChannel(BAR_CHANNEL_NAME, client, sampleOrg);
+        System.out.println("创建barChannel这个barChannel");
         assertTrue(barChannel.isInitialized());
         /**
          * sampleStore.saveChannel uses {@link Channel#serializeChannel()}
@@ -244,6 +253,7 @@ public class End2endIT {
         // get users for all orgs
         out("***** Enrolling Users *****");
         //循环遍历提供的简单的组织集合
+        System.out.println("此时testSampleOrgs的大小是testSampleOrgs="+testSampleOrgs.size());
         for (SampleOrg sampleOrg : testSampleOrgs) {
             //获取集合里面每个成员的HFCAClient
             HFCAClient ca = sampleOrg.getCAClient();
@@ -274,12 +284,15 @@ public class End2endIT {
                 sampleStore.storeClientPEMTLCertificate(sampleOrg, tlsCertPEM);
                 sampleStore.storeClientPEMTLSKey(sampleOrg, tlsKeyPEM);
             }
+            //上面TLS模式下的代码默认不执行的,直接会执行这里的代码
             //获取HFCAClient的信息HFCAInfo
             HFCAInfo info = ca.info(); //just check if we connect at all.
+            System.out.println("获取到的HFCAInfo="+info);
             //判断HFCAInfo不是空
             assertNotNull(info);
-            //
+            //此处得到的infoName是ca0
             String infoName = info.getCAName();
+            //根据实际的打印效果这个值可能是空的,目前一个值是ca0一个是空
             System.out.println("info.getCAName()获取到的infoName值是="+infoName);
             if (infoName != null && !infoName.isEmpty()) {
                 assertEquals(ca.getCAName(), infoName);
@@ -302,6 +315,7 @@ public class End2endIT {
                 System.out.println("目前没有注册,因此下面开始执行注册的步骤");
                 //TODO 目前不知道org1.department1是做什么的
                 RegistrationRequest rr = new RegistrationRequest(user.getName(), "org1.department1");
+                System.out.println("RegistrationRequest的值是="+rr);
                 user.setEnrollmentSecret(ca.register(rr, admin));
             }
             System.out.println("看看user用户是否背书user.isEnrolled()="+user.isEnrolled());
@@ -311,10 +325,10 @@ public class End2endIT {
             }
             //获取组织的名字
             final String sampleOrgName = sampleOrg.getName();
-            System.out.println("获取到的final组织的名字是="+sampleOrgName);
+            System.out.println("获取到的final组织的名字是sampleOrgName="+sampleOrgName);
             //获取住址的DomainName领域名字
             final String sampleOrgDomainName = sampleOrg.getDomainName();
-            System.out.println("获取到的领域名字是="+sampleOrgDomainName);
+            System.out.println("获取到的领域名字是DomainName="+sampleOrgDomainName);
             System.out.println("这里的路径是"+Paths.get(testConfig.getTestChannelPath(),
                     "crypto-config/peerOrganizations/",
                     sampleOrgDomainName, format("/users/Admin@%s/msp/keystore", sampleOrgDomainName)).toFile());
@@ -564,6 +578,8 @@ public class End2endIT {
                     failed.clear();
                     //把client的上下文设置为user1
                     client.setUserContext(sampleOrg.getUser(testUser1));
+                    System.out.println("上下文设置为user1的时候sampleOrg="+sampleOrg);
+                    System.out.println("上下文设置为user1之后的client="+client);
                     ///////////////
                     /// Send transaction proposal to all peers
                     //发送交易事务到所有的peers节点

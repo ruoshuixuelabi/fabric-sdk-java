@@ -11,24 +11,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.hyperledger.fabric_ca.sdk;
-
+import lombok.Data;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonWriter;
-
 /**
  * A registration request is information required to register a user, peer, or other
  * type of member.
  */
+@Data
 public class RegistrationRequest {
 
     // The enrollment ID of the user
