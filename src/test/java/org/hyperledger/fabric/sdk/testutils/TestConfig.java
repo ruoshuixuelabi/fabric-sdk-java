@@ -137,6 +137,7 @@ public class TestConfig {
             for (Map.Entry<Object, Object> x : sdkProperties.entrySet()) {
                 final String key = x.getKey() + "";
                 final String val = x.getValue() + "";
+                System.out.println("获取到的key="+key+"value="+val);
                 if (key.startsWith(INTEGRATIONTESTS_ORG)) {
                     Matcher match = orgPat.matcher(key);
                     if (match.matches() && match.groupCount() == 1) {
@@ -148,6 +149,7 @@ public class TestConfig {
             for (Map.Entry<String, SampleOrg> org : sampleOrgs.entrySet()) {
                 final SampleOrg sampleOrg = org.getValue();
                 final String orgName = org.getKey();
+                System.out.println("获取到的组织的sampleOrg="+sampleOrg+"orgName"+orgName);
                 String peerNames = sdkProperties.getProperty(INTEGRATIONTESTS_ORG + orgName + ".peer_locations");
                 String[] ps = peerNames.split("[ \t]*,[ \t]*");
                 for (String peer : ps) {
@@ -308,6 +310,10 @@ public class TestConfig {
         return Boolean.valueOf(getProperty(RUNIDEMIXMTTEST));
     }
 
+    /**
+     * 获得整合的测试组织样例
+     * @return
+     */
     public Collection<SampleOrg> getIntegrationTestsSampleOrgs() {
         return Collections.unmodifiableCollection(sampleOrgs.values());
     }

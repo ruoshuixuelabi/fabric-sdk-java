@@ -36,7 +36,6 @@ public class SampleOrg {
     final String name;
     final String mspid;
     HFCAClient caClient;
-
     Map<String, User> userMap = new HashMap<>();
     Map<String, String> peerLocations = new HashMap<>();
     Map<String, String> ordererLocations = new HashMap<>();
@@ -44,16 +43,11 @@ public class SampleOrg {
     private SampleUser admin;
     private String caLocation;
     private Properties caProperties = null;
-
     private SampleUser peerAdmin;
-
-
     private String domainName;
-
     public String getCAName() {
         return caName;
     }
-
     private String caName;
 
     public SampleOrg(String name, String mspid) {

@@ -211,7 +211,7 @@ public class End2endAndBackAgainIT {
         //SampleUser can be any implementation that implements org.hyperledger.fabric.sdk.User Interface
         ////////////////////////////
         // get users for all orgs
-        //获取所哟肚饿组织成员
+        //获取所示例组织里面的成员
         for (SampleOrg sampleOrg : testSampleOrgs) {
             final String orgName = sampleOrg.getName();
             System.out.println("sampleStore="+sampleStore);

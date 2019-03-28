@@ -11,82 +11,36 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.hyperledger.fabric.sdk;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import static java.lang.String.format;
+import static org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions;
+import static org.hyperledger.fabric.sdk.Channel.TransactionOptions.createTransactionOptions;
+import static org.hyperledger.fabric.sdk.User.userContextCheck;
+import static org.hyperledger.fabric.sdk.helper.Utils.isNullOrEmpty;
+import static org.hyperledger.fabric.sdk.helper.Utils.toHexString;
+import static org.hyperledger.fabric.sdk.transaction.ProtoUtils.createSeekInfoEnvelope;
+import static org.hyperledger.fabric.sdk.transaction.ProtoUtils.getSignatureHeaderAsByteString;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
-
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import io.grpc.StatusRuntimeException;
-import lombok.Data;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hyperledger.fabric.protos.common.Common.Block;
-import org.hyperledger.fabric.protos.common.Common.BlockMetadata;
-import org.hyperledger.fabric.protos.common.Common.ChannelHeader;
-import org.hyperledger.fabric.protos.common.Common.Envelope;
-import org.hyperledger.fabric.protos.common.Common.Header;
-import org.hyperledger.fabric.protos.common.Common.HeaderType;
-import org.hyperledger.fabric.protos.common.Common.LastConfig;
-import org.hyperledger.fabric.protos.common.Common.Metadata;
-import org.hyperledger.fabric.protos.common.Common.Payload;
-import org.hyperledger.fabric.protos.common.Common.Status;
 import org.hyperledger.fabric.protos.common.Configtx;
-import org.hyperledger.fabric.protos.common.Configtx.ConfigEnvelope;
-import org.hyperledger.fabric.protos.common.Configtx.ConfigGroup;
-import org.hyperledger.fabric.protos.common.Configtx.ConfigSignature;
-import org.hyperledger.fabric.protos.common.Configtx.ConfigUpdateEnvelope;
-import org.hyperledger.fabric.protos.common.Configtx.ConfigValue;
 import org.hyperledger.fabric.protos.common.Ledger;
+import org.hyperledger.fabric.protos.common.Common.*;
+import org.hyperledger.fabric.protos.common.Configtx.*;
 import org.hyperledger.fabric.protos.discovery.Protocol;
 import org.hyperledger.fabric.protos.msp.MspConfig;
 import org.hyperledger.fabric.protos.orderer.Ab;
-import org.hyperledger.fabric.protos.orderer.Ab.BroadcastResponse;
-import org.hyperledger.fabric.protos.orderer.Ab.DeliverResponse;
-import org.hyperledger.fabric.protos.orderer.Ab.SeekInfo;
-import org.hyperledger.fabric.protos.orderer.Ab.SeekPosition;
-import org.hyperledger.fabric.protos.orderer.Ab.SeekSpecified;
+import org.hyperledger.fabric.protos.orderer.Ab.*;
 import org.hyperledger.fabric.protos.peer.Configuration;
 import org.hyperledger.fabric.protos.peer.FabricProposal;
 import org.hyperledger.fabric.protos.peer.FabricProposal.SignedProposal;
@@ -103,41 +57,17 @@ import org.hyperledger.fabric.sdk.ServiceDiscovery.SDChaindcode;
 import org.hyperledger.fabric.sdk.ServiceDiscovery.SDEndorser;
 import org.hyperledger.fabric.sdk.ServiceDiscovery.SDEndorserState;
 import org.hyperledger.fabric.sdk.ServiceDiscovery.SDNetwork;
-import org.hyperledger.fabric.sdk.exception.CryptoException;
-import org.hyperledger.fabric.sdk.exception.EventHubException;
-import org.hyperledger.fabric.sdk.exception.InvalidArgumentException;
-import org.hyperledger.fabric.sdk.exception.ProposalException;
-import org.hyperledger.fabric.sdk.exception.ServiceDiscoveryException;
-import org.hyperledger.fabric.sdk.exception.TransactionEventException;
-import org.hyperledger.fabric.sdk.exception.TransactionException;
+import org.hyperledger.fabric.sdk.exception.*;
 import org.hyperledger.fabric.sdk.helper.Config;
 import org.hyperledger.fabric.sdk.helper.DiagnosticFileDumper;
 import org.hyperledger.fabric.sdk.helper.Utils;
 import org.hyperledger.fabric.sdk.security.certgen.TLSCertificateBuilder;
 import org.hyperledger.fabric.sdk.security.certgen.TLSCertificateKeyPair;
-import org.hyperledger.fabric.sdk.transaction.GetConfigBlockBuilder;
-import org.hyperledger.fabric.sdk.transaction.InstallProposalBuilder;
-import org.hyperledger.fabric.sdk.transaction.InstantiateProposalBuilder;
-import org.hyperledger.fabric.sdk.transaction.JoinPeerProposalBuilder;
-import org.hyperledger.fabric.sdk.transaction.ProposalBuilder;
-import org.hyperledger.fabric.sdk.transaction.ProtoUtils;
-import org.hyperledger.fabric.sdk.transaction.QueryCollectionsConfigBuilder;
-import org.hyperledger.fabric.sdk.transaction.QueryInstalledChaincodesBuilder;
-import org.hyperledger.fabric.sdk.transaction.QueryInstantiatedChaincodesBuilder;
-import org.hyperledger.fabric.sdk.transaction.QueryPeerChannelsBuilder;
-import org.hyperledger.fabric.sdk.transaction.TransactionBuilder;
-import org.hyperledger.fabric.sdk.transaction.TransactionContext;
-import org.hyperledger.fabric.sdk.transaction.UpgradeProposalBuilder;
-
-import static java.lang.String.format;
-import static org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions;
-import static org.hyperledger.fabric.sdk.Channel.TransactionOptions.createTransactionOptions;
-import static org.hyperledger.fabric.sdk.User.userContextCheck;
-import static org.hyperledger.fabric.sdk.helper.Utils.isNullOrEmpty;
-import static org.hyperledger.fabric.sdk.helper.Utils.toHexString;
-import static org.hyperledger.fabric.sdk.transaction.ProtoUtils.createSeekInfoEnvelope;
-import static org.hyperledger.fabric.sdk.transaction.ProtoUtils.getSignatureHeaderAsByteString;
-
+import org.hyperledger.fabric.sdk.transaction.*;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+import io.grpc.StatusRuntimeException;
+import lombok.Data;
 /**
  * The class representing a channel with which the client SDK interacts.
  * <p>
@@ -150,11 +80,9 @@ public class Channel implements Serializable {
     private static final boolean IS_DEBUG_LEVEL = logger.isDebugEnabled();
     private static final boolean IS_WARN_LEVEL = logger.isWarnEnabled();
     private static final boolean IS_TRACE_LEVEL = logger.isTraceEnabled();
-
     private static final DiagnosticFileDumper diagnosticFileDumper = IS_TRACE_LEVEL
             ? config.getDiagnosticFileDumper() : null;
     private static final String SYSTEM_CHANNEL_NAME = "";
-
     private static final long ORDERER_RETRY_WAIT_TIME = config.getOrdererRetryWaitTime();
     private static final long CHANNEL_CONFIG_WAIT_TIME = config.getChannelConfigWaitTime();
     private static final Random RANDOM = new Random();
@@ -183,7 +111,6 @@ public class Channel implements Serializable {
     /**
      * Runs processing events from event hubs.
      */
-
     transient Thread eventQueueThread = null;
     private transient volatile boolean initialized = false;
     private transient volatile boolean shutdown = false;
@@ -192,7 +119,6 @@ public class Channel implements Serializable {
     /**
      * A queue each eventing hub will write events to.
      */
-
     private transient ChannelEventQue channelEventQue = new ChannelEventQue();
     private transient LinkedHashMap<String, BL> blockListeners = new LinkedHashMap<>();
     private transient LinkedHashMap<String, LinkedList<TL>> txListeners = new LinkedHashMap<>();
@@ -201,54 +127,39 @@ public class Channel implements Serializable {
     private transient ScheduledExecutorService sweeperExecutorService;
     private transient String blh = null;
     private transient ServiceDiscovery serviceDiscovery;
-
     {
         for (Peer.PeerRole peerRole : EnumSet.allOf(PeerRole.class)) {
-
             peerRoleSetMap.put(peerRole, Collections.synchronizedSet(new HashSet<>()));
-
         }
     }
-
     //    public void clean(){
 //        channelEventQue = null;
 //    }
 //
     private Channel(String name, HFClient hfClient, Orderer orderer, ChannelConfiguration channelConfiguration, byte[][] signers) throws InvalidArgumentException, TransactionException {
         this(name, hfClient, false);
-
         logger.debug(format("Creating new channel %s on the Fabric", name));
-
         Channel ordererChannel = orderer.getChannel();
-
         try {
             addOrderer(orderer);
-
             //-----------------------------------------
             Envelope ccEnvelope = Envelope.parseFrom(channelConfiguration.getChannelConfigurationAsBytes());
-
             final Payload ccPayload = Payload.parseFrom(ccEnvelope.getPayload());
             final ChannelHeader ccChannelHeader = ChannelHeader.parseFrom(ccPayload.getHeader().getChannelHeader());
-
             if (ccChannelHeader.getType() != HeaderType.CONFIG_UPDATE.getNumber()) {
                 throw new InvalidArgumentException(format("Creating channel; %s expected config block type %s, but got: %s",
                         name,
                         HeaderType.CONFIG_UPDATE.name(),
                         HeaderType.forNumber(ccChannelHeader.getType())));
             }
-
             if (!name.equals(ccChannelHeader.getChannelId())) {
-
                 throw new InvalidArgumentException(format("Expected config block for channel: %s, but got: %s", name,
                         ccChannelHeader.getChannelId()));
             }
-
             final ConfigUpdateEnvelope configUpdateEnv = ConfigUpdateEnvelope.parseFrom(ccPayload.getData());
             ByteString configUpdate = configUpdateEnv.getConfigUpdate();
-
             sendUpdateChannel(configUpdate.toByteArray(), signers, orderer);
-            //         final ConfigUpdateEnvelope.Builder configUpdateEnvBuilder = configUpdateEnv.toBuilder();`
-
+            //         final ConfigUpdateEnvelope.Builder configUpdateEnvBuilder = configUpdateEnv.toBuilder();
             //---------------------------------------
 
             //          sendUpdateChannel(channelConfiguration, signers, orderer);
