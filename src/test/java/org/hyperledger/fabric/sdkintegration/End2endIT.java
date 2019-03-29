@@ -501,6 +501,8 @@ public class End2endIT {
             instantiateProposalRequest.setChaincodeID(chaincodeID);
             instantiateProposalRequest.setChaincodeLanguage(CHAIN_CODE_LANG);
             instantiateProposalRequest.setFcn("init");
+            //初始化的时候这里测试了一下链码初始化的时候保存中文后面是否可以取到
+//         instantiateProposalRequest.setArgs(new String[] {"a", "我是谁", "b", "" + (200 + delta)});
             instantiateProposalRequest.setArgs(new String[] {"a", "500", "b", "" + (200 + delta)});
             Map<String, byte[]> tm = new HashMap<>();
             tm.put("HyperLedgerFabric", "InstantiateProposalRequest:JavaSDK".getBytes(UTF_8));
@@ -678,6 +680,7 @@ public class End2endIT {
                     out("Now query chaincode for the value of b.");
                     QueryByChaincodeRequest queryByChaincodeRequest = client.newQueryProposalRequest();
                     queryByChaincodeRequest.setArgs(new String[] {"b"});
+                    //对于Java链码，我a存储的是汉字因此查询的是a
                     queryByChaincodeRequest.setFcn("query");
                     queryByChaincodeRequest.setChaincodeID(chaincodeID);
                     Map<String, byte[]> tm2 = new HashMap<>();
@@ -692,6 +695,7 @@ public class End2endIT {
                                     + ". Was verified : " + proposalResponse.isVerified());
                         } else {
                             String payload = proposalResponse.getProposalResponse().getResponse().getPayload().toStringUtf8();
+                            System.out.println("返回来的数据是payload="+payload);
                             out("Query payload of b from peer %s returned %s", proposalResponse.getPeer().getName(), payload);
                             assertEquals(payload, expect);
                         }
@@ -739,19 +743,15 @@ public class End2endIT {
             returnedBlock = channel.queryBlockByHash(hashQuery);
             out("queryBlockByHash returned block with blockNumber " + returnedBlock.getBlockNumber());
             assertEquals(channelInfo.getHeight() - 2, returnedBlock.getBlockNumber());
-
             // Query block by TxID. Since it's the last TxID, should be block 2
             returnedBlock = channel.queryBlockByTransactionID(testTxID);
             out("queryBlockByTxID returned block with blockNumber " + returnedBlock.getBlockNumber());
             assertEquals(channelInfo.getHeight() - 1, returnedBlock.getBlockNumber());
-
             // query transaction by ID
             TransactionInfo txInfo = channel.queryTransactionByID(testTxID);
             out("QueryTransactionByID returned TransactionInfo: txID " + txInfo.getTransactionID()
                     + "\n     validation code " + txInfo.getValidationCode().getNumber());
-
             if (chaincodeEventListenerHandle != null) {
-
                 channel.unregisterChaincodeEventListener(chaincodeEventListenerHandle);
                 //Should be two. One event in chaincode and two notification for each of the two event hubs
 

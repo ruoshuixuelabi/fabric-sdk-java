@@ -12,6 +12,7 @@
  *  limitations under the License.
  */
 package org.hyperledger.fabric.sdk;
+import java.io.*;
 import static java.lang.String.format;
 import static org.hyperledger.fabric.sdk.Channel.PeerOptions.createPeerOptions;
 import static org.hyperledger.fabric.sdk.Channel.TransactionOptions.createTransactionOptions;
@@ -20,7 +21,6 @@ import static org.hyperledger.fabric.sdk.helper.Utils.isNullOrEmpty;
 import static org.hyperledger.fabric.sdk.helper.Utils.toHexString;
 import static org.hyperledger.fabric.sdk.transaction.ProtoUtils.createSeekInfoEnvelope;
 import static org.hyperledger.fabric.sdk.transaction.ProtoUtils.getSignatureHeaderAsByteString;
-import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -5636,24 +5636,18 @@ public class Channel implements Serializable {
      */
     public static class PeerOptions implements Cloneable, Serializable {
         private static final long serialVersionUID = -6906605662806520793L;
-
         protected EnumSet<PeerRole> peerRoles;
         protected Boolean newest = true;
         protected Long startEvents;
         protected Long stopEvents = Long.MAX_VALUE;
         protected boolean registerEventsForFilteredBlocks = false;
-
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder(1000);
             sb.append("PeerOptions( " + format("newest: %s, startEvents: %s, stopEvents: %s, registerEventsForFilteredBlocks: %s", "" + newest, "" + startEvents, "" + stopEvents, registerEventsForFilteredBlocks));
-
             if (peerRoles != null && !peerRoles.isEmpty()) {
-
                 sb.append(", PeerRoles:[");
-
                 String sep = "";
-
                 for (PeerRole peerRole : peerRoles) {
                     sb.append(sep).append(peerRole.getPropertyName());
                     sep = " ,";

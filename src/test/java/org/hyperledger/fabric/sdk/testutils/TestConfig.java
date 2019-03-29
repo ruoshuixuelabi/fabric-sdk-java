@@ -50,7 +50,7 @@ public class TestConfig {
     private static final String ORG_HYPERLEDGER_FABRIC_SDK_CONFIGURATION = "org.hyperledger.fabric.sdktest.configuration";
     private static final String ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST = "ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST";
     private static final String LOCALHOST = //Change test to reference another host .. easier config for my testing on Windows !
-            System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST) == null ? "192.168.10.10" : System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST);
+            System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST) == null ? "192.168.10.11" : System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST);
     //应该是基础的前缀
     private static final String PROPBASE = "org.hyperledger.fabric.sdktest.";
     private static final String INVOKEWAITTIME = PROPBASE + "InvokeWaitTime";
@@ -113,8 +113,8 @@ public class TestConfig {
             //加载失败之后会有默认的值,因为上面的配置文件根本不存在
             // Default values
             defaultProperty(INVOKEWAITTIME, "32000");
-            defaultProperty(DEPLOYWAITTIME, "120000");
-            defaultProperty(PROPOSALWAITTIME, "120000");
+            defaultProperty(DEPLOYWAITTIME, "1200000");
+            defaultProperty(PROPOSALWAITTIME, "1200000");
             defaultProperty(RUNIDEMIXMTTEST, "false");
             //////
             defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.mspid", "Org1MSP");
@@ -269,9 +269,12 @@ public class TestConfig {
         }
         return ret;
     }
-
+    /**
+     * 给sdkProperties属性设置默认的键值对,全局的
+     * @param key
+     * @param value
+     */
     private static void defaultProperty(String key, String value) {
-
         String ret = System.getProperty(key);
         if (ret != null) {
             sdkProperties.put(key, ret);
@@ -284,16 +287,12 @@ public class TestConfig {
                 if (null == sdkProperties.getProperty(key) && value != null) {
                     sdkProperties.put(key, value);
                 }
-
             }
-
         }
     }
-
     public int getTransactionWaitTime() {
         return Integer.parseInt(getProperty(INVOKEWAITTIME));
     }
-
     /**
      * 部署的等待时间
      * @return
