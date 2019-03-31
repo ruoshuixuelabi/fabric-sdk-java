@@ -169,12 +169,10 @@ public class TestUtils {
         ret.setAccessible(true);
         return ret;
     }
-
     /**
      * Reset config.
      */
     public static void resetConfig() {
-
         try {
             final Field field = Config.class.getDeclaredField("config");
             field.setAccessible(true);
@@ -183,9 +181,7 @@ public class TestUtils {
         } catch (Exception e) {
             throw new RuntimeException("Cannot reset config", e);
         }
-
     }
-
     /**
      * Sets a Config property value
      * <p>

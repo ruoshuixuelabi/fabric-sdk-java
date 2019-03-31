@@ -40,7 +40,6 @@ import org.hyperledger.fabric.sdkintegration.SampleOrg;
  * with a java system property. Property hierarchy goes System property
  * overrides environment variable which overrides config file for default values specified here.
  */
-
 /**
  * Test Configuration
  */
@@ -316,36 +315,24 @@ public class TestConfig {
     public Collection<SampleOrg> getIntegrationTestsSampleOrgs() {
         return Collections.unmodifiableCollection(sampleOrgs.values());
     }
-
     public SampleOrg getIntegrationTestsSampleOrg(String name) {
         return sampleOrgs.get(name);
-
     }
-
     public Properties getPeerProperties(String name) {
-
         return getEndPointProperties("peer", name);
-
     }
-
     public Properties getOrdererProperties(String name) {
-
         return getEndPointProperties("orderer", name);
-
     }
-
     public Properties getEndPointProperties(final String type, final String name) {
         Properties ret = new Properties();
-
         final String domainName = getDomainName(name);
-
         File cert = Paths.get(getTestChannelPath(), "crypto-config/ordererOrganizations".replace("orderer", type), domainName, type + "s",
                 name, "tls/server.crt").toFile();
         if (!cert.exists()) {
             throw new RuntimeException(String.format("Missing cert file for: %s. Could not find at location: %s", name,
                     cert.getAbsolutePath()));
         }
-
         if (!isRunningAgainstFabric10()) {
             File clientCert;
             File clientKey;
@@ -357,12 +344,10 @@ public class TestConfig {
                 clientCert = Paths.get(getTestChannelPath(), "crypto-config/peerOrganizations/", domainName, "users/User1@" + domainName, "tls/client.crt").toFile();
                 clientKey = Paths.get(getTestChannelPath(), "crypto-config/peerOrganizations/", domainName, "users/User1@" + domainName, "tls/client.key").toFile();
             }
-
             if (!clientCert.exists()) {
                 throw new RuntimeException(String.format("Missing  client cert file for: %s. Could not find at location: %s", name,
                         clientCert.getAbsolutePath()));
             }
-
             if (!clientKey.exists()) {
                 throw new RuntimeException(String.format("Missing  client key file for: %s. Could not find at location: %s", name,
                         clientKey.getAbsolutePath()));
@@ -370,53 +355,37 @@ public class TestConfig {
             ret.setProperty("clientCertFile", clientCert.getAbsolutePath());
             ret.setProperty("clientKeyFile", clientKey.getAbsolutePath());
         }
-
         ret.setProperty("pemFile", cert.getAbsolutePath());
-
         ret.setProperty("hostnameOverride", name);
         ret.setProperty("sslProvider", "openSSL");
         ret.setProperty("negotiationType", "TLS");
-
         return ret;
     }
-
     public Properties getEventHubProperties(String name) {
-
         return getEndPointProperties("peer", name); //uses same as named peer
-
     }
-
     public String getTestChannelPath() {
-
         return "src/test/fixture/sdkintegration/e2e-2Orgs/" + FAB_CONFIG_GEN_VERS;
-
     }
-
     public boolean isRunningAgainstFabric10() {
         return isFabricVersionBefore("1.1");
     }
-
     /**
      * url location of configtxlator
-     *
      * @return
      */
-
     public String getFabricConfigTxLaterLocation() {
         return "http://" + LOCALHOST + ":7059";
     }
-
     /**
      * Returns the appropriate Network Config YAML file based on whether TLS is currently
      * enabled or not
-     *
      * @return The appropriate Network Config YAML file
      */
     public File getTestNetworkConfigFileYAML() {
         String fname = runningTLS ? "network-config-tls.yaml" : "network-config.yaml";
         String pname = "src/test/fixture/sdkintegration/network_configs/";
         File ret = new File(pname, fname);
-
         if (!"localhost".equals(LOCALHOST) || isFabricVersionAtOrAfter("1.3")) {
             // change on the fly ...
             File temp = null;
@@ -424,44 +393,33 @@ public class TestConfig {
             try {
                 //create a temp file
                 temp = File.createTempFile(fname, "-FixedUp.yaml");
-
                 if (temp.exists()) { //For testing start fresh
                     temp.delete();
                 }
-
                 byte[] data = Files.readAllBytes(Paths.get(ret.getAbsolutePath()));
-
                 String sourceText = new String(data, StandardCharsets.UTF_8);
-
                 sourceText = sourceText.replaceAll("https://localhost", "https://" + LOCALHOST);
                 sourceText = sourceText.replaceAll("http://localhost", "http://" + LOCALHOST);
                 sourceText = sourceText.replaceAll("grpcs://localhost", "grpcs://" + LOCALHOST);
                 sourceText = sourceText.replaceAll("grpc://localhost", "grpc://" + LOCALHOST);
-
                 if (isFabricVersionAtOrAfter("1.3")) {
                     //eventUrl: grpc://localhost:8053
                     sourceText = sourceText.replaceAll("(?m)^[ \\t]*eventUrl:", "# eventUrl:");
                 }
-
                 Files.write(Paths.get(temp.getAbsolutePath()), sourceText.getBytes(StandardCharsets.UTF_8),
                         StandardOpenOption.CREATE_NEW, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
-
                 if (!Objects.equals("true", System.getenv(ORG_HYPERLEDGER_FABRIC_SDK_TEST_FABRIC_HOST + "_KEEP"))) {
                     temp.deleteOnExit();
                 } else {
                     System.err.println("produced new network-config.yaml file at:" + temp.getAbsolutePath());
                 }
-
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-
             ret = temp;
         }
-
         return ret;
     }
-
     private String getDomainName(final String name) {
         int dot = name.indexOf(".");
         if (-1 == dot) {
@@ -469,7 +427,5 @@ public class TestConfig {
         } else {
             return name.substring(dot + 1);
         }
-
     }
-
 }

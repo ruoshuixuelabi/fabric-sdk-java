@@ -42,11 +42,19 @@ public class SampleUser implements User, Serializable {
     private transient SampleStore keyValStore;
     private String keyValStoreName;
     private transient CryptoSuite cryptoSuite;
+    /**
+     * 构造器,创建SampleUser,创建之后会保存
+     * @param name
+     * @param org
+     * @param fs
+     * @param cryptoSuite
+     */
     public SampleUser(String name, String org, SampleStore fs, CryptoSuite cryptoSuite) {
         this.name = name;
         this.cryptoSuite = cryptoSuite;
         this.keyValStore = fs;
         this.organization = org;
+        //keyValStoreName的值赋值为 "user." + name + org
         this.keyValStoreName = toKeyValStoreName(this.name, org);
         String memberStr = keyValStore.getValue(keyValStoreName);
         if (null == memberStr) {
@@ -129,7 +137,6 @@ public class SampleUser implements User, Serializable {
             e.printStackTrace();
         }
     }
-
     /**
      * Restore the state of this user from the key value store (if found).  If not found, do nothing.
      */

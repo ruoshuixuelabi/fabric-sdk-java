@@ -56,10 +56,8 @@ public class SampleStore {
     public SampleStore(File file) {
         this.file = file.getAbsolutePath();
     }
-
     /**
      * Get the value associated with name.
-     *
      * @param name
      * @return value associated with the name
      */
@@ -67,10 +65,8 @@ public class SampleStore {
         Properties properties = loadProperties();
         return properties.getProperty(name);
     }
-
     /**
      * Has the value present.
-     *
      * @param name
      * @return true if it's present.
      */
@@ -79,6 +75,10 @@ public class SampleStore {
         return properties.containsKey(name);
     }
 
+    /**
+     * 加载配置文件属性
+     * @return
+     */
     private Properties loadProperties() {
         Properties properties = new Properties();
         try (InputStream input = new FileInputStream(file)) {
@@ -90,13 +90,10 @@ public class SampleStore {
             logger.warn(String.format("Could not load keyvalue store from file \"%s\", reason:%s",
                     file, e.getMessage()));
         }
-
         return properties;
     }
-
     /**
      * Set the value associated with name.
-     *
      * @param name  The name of the parameter
      * @param value Value for the parameter
      */
@@ -108,52 +105,46 @@ public class SampleStore {
             properties.setProperty(name, value);
             properties.store(output, "");
             output.close();
-
         } catch (IOException e) {
             logger.warn(String.format("Could not save the keyvalue store, reason:%s", e.getMessage()));
         }
     }
-
     private final Map<String, SampleUser> members = new HashMap<>();
-
     /**
      * Get the user with a given name
-     *
+     * 通过给定的name和org找到user
      * @param name
      * @param org
      * @return user
      */
     public SampleUser getMember(String name, String org) {
         // Try to get the SampleUser state from the cache
+        //查找key是"user." + name + org
         SampleUser sampleUser = members.get(SampleUser.toKeyValStoreName(name, org));
+        //如果可以找到就返回找到的SampleUser
         if (null != sampleUser) {
             return sampleUser;
         }
+        //如果找不到就创建一个新的
         // Create the SampleUser and try to restore it's state from the key value store (if found).
         sampleUser = new SampleUser(name, org, this, cryptoSuite);
         return sampleUser;
     }
     /**
      * Check if store has user.
-     *
      * @param name
      * @param org
      * @return true if the user exists.
      */
     public boolean hasMember(String name, String org) {
-
         // Try to get the SampleUser state from the cache
-
         if (members.containsKey(SampleUser.toKeyValStoreName(name, org))) {
             return true;
         }
         return SampleUser.isStored(name, org, this);
-
     }
-
     /**
      * Get the user with a given name
-     *
      * @param name
      * @param org
      * @param mspId
@@ -167,31 +158,23 @@ public class SampleStore {
      */
     public SampleUser getMember(String name, String org, String mspId, File privateKeyFile,
                                 File certificateFile) throws IOException, NoSuchAlgorithmException, NoSuchProviderException, InvalidKeySpecException {
-
         try {
             // Try to get the SampleUser state from the cache
             SampleUser sampleUser = members.get(SampleUser.toKeyValStoreName(name, org));
             if (null != sampleUser) {
                 return sampleUser;
             }
-
             // Create the SampleUser and try to restore it's state from the key value store (if found).
             sampleUser = new SampleUser(name, org, this, cryptoSuite);
             sampleUser.setMspId(mspId);
-
             String certificate = new String(IOUtils.toByteArray(new FileInputStream(certificateFile)), "UTF-8");
-
             PrivateKey privateKey = getPrivateKeyFromBytes(IOUtils.toByteArray(new FileInputStream(privateKeyFile)));
-
             sampleUser.setEnrollment(new SampleStoreEnrollement(privateKey, certificate));
-
             sampleUser.saveState();
-
             return sampleUser;
         } catch (IOException e) {
             e.printStackTrace();
             throw e;
-
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             throw e;
@@ -205,93 +188,58 @@ public class SampleStore {
             e.printStackTrace();
             throw e;
         }
-
     }
-
     static {
         Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
     }
-
     static PrivateKey getPrivateKeyFromBytes(byte[] data) throws IOException, NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException {
         final Reader pemReader = new StringReader(new String(data));
-
         final PrivateKeyInfo pemPair;
         try (PEMParser pemParser = new PEMParser(pemReader)) {
             pemPair = (PrivateKeyInfo) pemParser.readObject();
         }
-
         PrivateKey privateKey = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME).getPrivateKey(pemPair);
-
         return privateKey;
     }
-
     // Use this to make sure SDK is not dependent on HFCA enrollment for non-Idemix
     static final class SampleStoreEnrollement implements Enrollment, Serializable {
-
         private static final long serialVersionUID = -2784835212445309006L;
         private final PrivateKey privateKey;
         private final String certificate;
-
         SampleStoreEnrollement(PrivateKey privateKey, String certificate) {
-
             this.certificate = certificate;
-
             this.privateKey = privateKey;
         }
-
         @Override
         public PrivateKey getKey() {
-
             return privateKey;
         }
-
         @Override
         public String getCert() {
             return certificate;
         }
-
     }
-
     void saveChannel(Channel channel) throws IOException, InvalidArgumentException {
-
         setValue("channel." + channel.getName(), Hex.toHexString(channel.serializeChannel()));
-
     }
-
     Channel getChannel(HFClient client, String name) throws IOException, ClassNotFoundException, InvalidArgumentException {
         Channel ret = null;
-
         String channelHex = getValue("channel." + name);
         if (channelHex != null) {
-
             ret = client.deSerializeChannel(Hex.decode(channelHex));
-
         }
         return ret;
     }
-
     public void storeClientPEMTLSKey(SampleOrg sampleOrg, String key) {
-
         setValue("clientPEMTLSKey." + sampleOrg.getName(), key);
-
     }
-
     public String getClientPEMTLSKey(SampleOrg sampleOrg) {
-
         return getValue("clientPEMTLSKey." + sampleOrg.getName());
-
     }
-
     public void storeClientPEMTLCertificate(SampleOrg sampleOrg, String certificate) {
-
         setValue("clientPEMTLSCertificate." + sampleOrg.getName(), certificate);
-
     }
-
     public String getClientPEMTLSCertificate(SampleOrg sampleOrg) {
-
         return getValue("clientPEMTLSCertificate." + sampleOrg.getName());
-
     }
-
 }

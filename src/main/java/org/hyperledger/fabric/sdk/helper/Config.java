@@ -237,10 +237,8 @@ public class Config {
         }
 
     }
-
     /**
      * getConfig return back singleton for SDK configuration.
-     *
      * @return Global configuration
      */
     public static Config getConfig() {
@@ -248,12 +246,9 @@ public class Config {
             config = new Config();
         }
         return config;
-
     }
-
     /**
      * getProperty return back property for the given value.
-     *
      * @param property
      * @return String value for the property
      */

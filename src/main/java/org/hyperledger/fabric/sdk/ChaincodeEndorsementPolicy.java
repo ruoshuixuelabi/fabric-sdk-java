@@ -225,53 +225,40 @@ public class ChaincodeEndorsementPolicy {
 
     /**
      * From a yaml file
-     *
      * @param yamlPolicyFile File location for the chaincode endorsement policy specification.
      * @throws IOException
      * @throws ChaincodeEndorsementPolicyParseException
      */
-
     public void fromYamlFile(File yamlPolicyFile) throws IOException, ChaincodeEndorsementPolicyParseException {
         final Yaml yaml = new Yaml();
         final Map<?, ?> load = (Map<?, ?>) yaml.load(new FileInputStream(yamlPolicyFile));
-
         Map<?, ?> mp = (Map<?, ?>) load.get("policy");
-
         if (null == mp) {
             throw new ChaincodeEndorsementPolicyParseException("The policy file has no policy section");
         }
-
         IndexedHashMap<String, MSPPrincipal> identities = parseIdentities((Map<?, ?>) load.get("identities"));
-
         SignaturePolicy sp = parsePolicy(identities, mp);
-
         policyBytes = Policies.SignaturePolicyEnvelope.newBuilder()
                 .setVersion(0)
                 .addAllIdentities(identities.values())
                 .setRule(sp)
                 .build().toByteArray();
     }
-
     /**
      * Construct a chaincode endorsement policy from a stream.
-     *
      * @param inputStream
      * @throws IOException
      */
-
     public void fromStream(InputStream inputStream) throws IOException {
         policyBytes = IOUtils.toByteArray(inputStream);
     }
-
     /**
      * sets the ChaincodeEndorsementPolicy from a byte array
-     *
      * @param policyAsBytes the byte array containing the serialized policy
      */
     public void fromBytes(byte[] policyAsBytes) {
         this.policyBytes = policyAsBytes;
     }
-
     /**
      * @return the policy serialized per protobuf and ready for inclusion into the various Block/Envelope/ChaincodeInputSpec structures
      */

@@ -66,7 +66,7 @@ import static org.junit.Assert.fail;
  * Test end to end scenario
  */
 public class End2endIT {
-    //创建测试的配置类
+    //创建测试的配置类,这里第一次运行其实是new了一个
     private static final TestConfig testConfig = TestConfig.getConfig();
     //测试的管理员账号
     static final String TEST_ADMIN_NAME = "admin";
@@ -143,7 +143,9 @@ public class End2endIT {
      * @throws org.hyperledger.fabric_ca.sdk.exception.InvalidArgumentException
      */
     @Before
-    public void checkConfig() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, MalformedURLException, org.hyperledger.fabric_ca.sdk.exception.InvalidArgumentException {
+    public void checkConfig() throws NoSuchFieldException, SecurityException,
+            IllegalArgumentException, IllegalAccessException, MalformedURLException,
+            org.hyperledger.fabric_ca.sdk.exception.InvalidArgumentException {
         out("\n\n\nRUNNING: %s.\n", testName);
         //   configHelper.clearConfig();
         //   assertEquals(256, Config.getConfig().getSecurityLevel());
@@ -184,7 +186,7 @@ public class End2endIT {
         //新创建例子的存储
         sampleStore = new SampleStore(sampleStoreFile);
         System.out.println("示例存储的内容是sampleStore="+sampleStore);
-        //用户背书的步骤？？？、
+        //用户背书的步骤？？？、这将使用Fabric CA注册用户,并设置示例存储,以便稍后获取用户
         enrollUsersSetup(sampleStore); //This enrolls users with fabric ca and setups sample store to get users later.
         //执行Fabric的测试
         runFabricTest(sampleStore); //Runs Fabric tests with constructing channels, joining peers, exercising chaincode
@@ -252,7 +254,8 @@ public class End2endIT {
         ////////////////////////////
         // get users for all orgs
         out("***** Enrolling Users *****");
-        //循环遍历提供的简单的组织集合
+        System.out.println("登记Users");
+        //循环遍历提供的简单的组织集合,并且设置
         System.out.println("此时testSampleOrgs的大小是testSampleOrgs="+testSampleOrgs.size());
         for (SampleOrg sampleOrg : testSampleOrgs) {
             //获取集合里面每个成员的HFCAClient
@@ -288,7 +291,7 @@ public class End2endIT {
             //获取HFCAClient的信息HFCAInfo
             HFCAInfo info = ca.info(); //just check if we connect at all.
             System.out.println("获取到的HFCAInfo="+info);
-            //判断HFCAInfo不是空
+            //判断HFCAInfo不是空,是空的话会报错
             assertNotNull(info);
             //此处得到的infoName是ca0
             String infoName = info.getCAName();
@@ -298,9 +301,11 @@ public class End2endIT {
                 assertEquals(ca.getCAName(), infoName);
             }
             //从sampleStore里面获取简单样例成员SampleUser,根据组织名字orgName,成员的名字是admin
+            //在这个测试用例里面由于sampleStore是空的,因此其实这里是创建了一个新的SampleUser
             SampleUser admin = sampleStore.getMember(TEST_ADMIN_NAME, orgName);
             System.out.println("SampleUser成员是admin="+admin);
             System.out.println("admin.isEnrolled()背书情况是="+admin.isEnrolled());
+            //如果没有注册背书,那就设置注册背书的属性
             if (!admin.isEnrolled()) {  //Preregistered admin only needs to be enrolled with Fabric caClient.
                 System.out.println("开始设置背书人admin.getName()="+admin.getName());
                 admin.setEnrollment(ca.enroll(admin.getName(), "adminpw"));
@@ -383,14 +388,18 @@ public class End2endIT {
         //testRemovingAddingPeersOrderers(client, channel);
         Vector<ChaincodeEventCapture> chaincodeEvents = new Vector<>(); // Test list to capture chaincode events.
         try {
+            //获取channel名字
             final String channelName = channel.getName();
             System.out.println("目前获取到的channelName="+channelName);
+            //判断是否是foo这个channel
             boolean isFooChain = FOO_CHANNEL_NAME.equals(channelName);
             out("Running channel %s", channelName);
             System.out.println("正在运行的channelName="+channelName);
             //获取到这个channel的所有排序节点
             Collection<Orderer> orderers = channel.getOrderers();
+            //定义一个变量ChaincodeID
             final ChaincodeID chaincodeID;
+            //定义教义的响应,这是一个集合
             Collection<ProposalResponse> responses;
             Collection<ProposalResponse> successful = new LinkedList<>();
             Collection<ProposalResponse> failed = new LinkedList<>();
@@ -408,6 +417,7 @@ public class End2endIT {
                                 new String(chaincodeEvent.getPayload()), es);
                     });
             //For non foo channel unregister event listener to test events are not called.
+            //这里判断不是foo这个channel,不是的话不注册事件以及不回调
             if (!isFooChain) {
                 System.out.println("isFooChain="+isFooChain);
                 channel.unregisterChaincodeEventListener(chaincodeEventListenerHandle);
@@ -483,7 +493,7 @@ public class End2endIT {
                 }
                 //   }
                 out("Received %d install proposal responses. Successful+verified: %d . Failed: %d", numInstallProposal, successful.size(), failed.size());
-                System.out.println("目前收到的安装链码的响应是 成功的有="+numInstallProposal+"个,应该成功的有="+ successful.size()+"失败的数量是="+failed.size());
+                System.out.println("目前收到的安装链码的响应是成功的有="+numInstallProposal+"个,应该成功的有="+ successful.size()+"失败的数量是="+failed.size());
                 if (failed.size() > 0) {
                     ProposalResponse first = failed.iterator().next();
                     fail("Not enough endorsers for install :" + successful.size() + ".  " + first.getMessage());
@@ -500,6 +510,7 @@ public class End2endIT {
             instantiateProposalRequest.setProposalWaitTime(DEPLOYWAITTIME);
             instantiateProposalRequest.setChaincodeID(chaincodeID);
             instantiateProposalRequest.setChaincodeLanguage(CHAIN_CODE_LANG);
+            //调用链码的实例化方法
             instantiateProposalRequest.setFcn("init");
             //初始化的时候这里测试了一下链码初始化的时候保存中文后面是否可以取到
 //         instantiateProposalRequest.setArgs(new String[] {"a", "我是谁", "b", "" + (200 + delta)});
@@ -596,6 +607,7 @@ public class End2endIT {
                     tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8)); //Just some extra junk in transient map
                     tm2.put("method", "TransactionProposalRequest".getBytes(UTF_8)); // ditto
                     tm2.put("result", ":)".getBytes(UTF_8));  // This should be returned in the payload see chaincode why.
+                    //如果链码的语言是GO语言并且Fabric的版本大于1.2
                     if (Type.GO_LANG.equals(CHAIN_CODE_LANG) && testConfig.isFabricVersionAtOrAfter("1.2")) {
                         System.out.println("目前的链码是go语言版本的并且客户端的版本大于1.2");
                         expectedMoveRCMap.put(channelName, random.nextInt(300) + 100L); // the chaincode will return this as status see chaincode why.
@@ -797,18 +809,18 @@ public class End2endIT {
     Channel constructChannel(String name, HFClient client, SampleOrg sampleOrg) throws Exception {
         ////////////////////////////
         //Construct the channel
-        //
         out("Constructing channel %s", name);
         System.out.println("目前正在创建channel="+name);
         //boolean doPeerEventing = false;
         boolean doPeerEventing = !testConfig.isRunningAgainstFabric10() && BAR_CHANNEL_NAME.equals(name);
         System.out.println("doPeerEventing="+doPeerEventing);
-//        boolean doPeerEventing = !testConfig.isRunningAgainstFabric10() && FOO_CHANNEL_NAME.equals(name);
+//     boolean doPeerEventing = !testConfig.isRunningAgainstFabric10() && FOO_CHANNEL_NAME.equals(name);
         //Only peer Admin org
         //获取到peerAdmin节点 用户成员
         SampleUser peerAdmin = sampleOrg.getPeerAdmin();
         //把目前的HFClient客户端上下文设置为peerAdmin
         client.setUserContext(peerAdmin);
+        //定义一个集合存储排序节点
         Collection<Orderer> orderers = new LinkedList<>();
         for (String orderName : sampleOrg.getOrdererNames()) {
             System.out.println("获取到所有的组织名字orderName="+orderName);
@@ -825,8 +837,7 @@ public class End2endIT {
                 System.out.println("再次设置属性之后获取到ordererProperties="+key + "=" + ordererProperties.getProperty(key));
             }
             //创建排序节点并把排序节点添加到集合
-            orderers.add(client.newOrderer(orderName, sampleOrg.getOrdererLocation(orderName),
-                    ordererProperties));
+            orderers.add(client.newOrderer(orderName, sampleOrg.getOrdererLocation(orderName), ordererProperties));
         }
         //Just pick the first orderer in the list to create the channel.
         //获取到第一个排序节点Orderer
@@ -843,7 +854,8 @@ public class End2endIT {
         Channel newChannel = client.newChannel(name, anOrderer, channelConfiguration,
                 client.getChannelConfigurationSignature(channelConfiguration, peerAdmin));
         out("Created channel %s", name);
-        System.out.println("Channel创建成功了="+name);
+        System.out.println("Channel创建成功了,Channel的名字是="+name);
+        System.out.println("Channel创建成功了,Channel="+newChannel);
         boolean everyother = true; //test with both cases when doing peer eventing.
         for (String peerName : sampleOrg.getPeerNames()) {
             String peerLocation = sampleOrg.getPeerLocation(peerName);
@@ -889,7 +901,7 @@ public class End2endIT {
             //把遍历到的每一个排序节点加入newChannel
             newChannel.addOrderer(orderer);
         }
-        //目前不知道EventHub是什么意思
+        //目前不知道EventHub是什么意思,貌似是事件回调
         for (String eventHubName : sampleOrg.getEventHubNames()) {
             System.out.println("循环遍历出每一个eventHubName="+eventHubName);
             final Properties eventHubProperties = testConfig.getEventHubProperties(eventHubName);
@@ -970,18 +982,15 @@ public class End2endIT {
                                     transactionActionInfo.getProposalResponseStatus());
                             out("   Transaction action %d proposal response payload: %s", j,
                                     printableString(new String(transactionActionInfo.getProposalResponsePayload())));
-
                             String chaincodeIDName = transactionActionInfo.getChaincodeIDName();
                             String chaincodeIDVersion = transactionActionInfo.getChaincodeIDVersion();
                             String chaincodeIDPath = transactionActionInfo.getChaincodeIDPath();
                             out("   Transaction action %d proposal chaincodeIDName: %s, chaincodeIDVersion: %s,  chaincodeIDPath: %s ", j,
                                     chaincodeIDName, chaincodeIDVersion, chaincodeIDPath);
-
                             // Check to see if we have our expected event.
                             if (blockNumber == 2) {
                                 ChaincodeEvent chaincodeEvent = transactionActionInfo.getEvent();
                                 assertNotNull(chaincodeEvent);
-
                                 assertTrue(Arrays.equals(EXPECTED_EVENT_DATA, chaincodeEvent.getPayload()));
                                 assertEquals(testTxID, chaincodeEvent.getTxId());
                                 assertEquals(CHAIN_CODE_NAME, chaincodeEvent.getChaincodeId());
@@ -989,7 +998,6 @@ public class End2endIT {
                                 assertEquals(CHAIN_CODE_NAME, chaincodeIDName);
                                 assertEquals("github.com/example_cc", chaincodeIDPath);
                                 assertEquals("1", chaincodeIDVersion);
-
                             }
                             TxReadWriteSetInfo rwsetInfo = transactionActionInfo.getTxReadWriteSet();
                             if (null != rwsetInfo) {
@@ -1000,10 +1008,8 @@ public class End2endIT {
                                     int rs = -1;
                                     for (KvRwset.KVRead readList : rws.getReadsList()) {
                                         rs++;
-
                                         out("     Namespace %s read set %d key %s  version [%d:%d]", namespace, rs, readList.getKey(),
                                                 readList.getVersion().getBlockNum(), readList.getVersion().getTxNum());
-
                                         if ("bar".equals(channelId) && blockNumber == 2) {
                                             if ("example_cc_go".equals(namespace)) {
                                                 if (rs == 0) {
@@ -1017,21 +1023,17 @@ public class End2endIT {
                                                 } else {
                                                     fail(format("unexpected readset %d", rs));
                                                 }
-
                                                 TX_EXPECTED.remove("readset1");
                                             }
                                         }
                                     }
-
                                     rs = -1;
                                     for (KvRwset.KVWrite writeList : rws.getWritesList()) {
                                         rs++;
                                         String valAsString = printableString(new String(writeList.getValue().toByteArray(), UTF_8));
-
                                         out("     Namespace %s write set %d key %s has value '%s' ", namespace, rs,
                                                 writeList.getKey(),
                                                 valAsString);
-
                                         if ("bar".equals(channelId) && blockNumber == 2) {
                                             if (rs == 0) {
                                                 assertEquals("a", writeList.getKey());
@@ -1042,7 +1044,6 @@ public class End2endIT {
                                             } else {
                                                 fail(format("unexpected writeset %d", rs));
                                             }
-
                                             TX_EXPECTED.remove("writeset1");
                                         }
                                     }
@@ -1050,9 +1051,7 @@ public class End2endIT {
                             }
                         }
                     }
-
                     assertEquals(transactionCount, returnedBlock.getTransactionCount());
-
                 }
             }
             if (!TX_EXPECTED.isEmpty()) {
@@ -1062,5 +1061,4 @@ public class End2endIT {
             throw e.getCause();
         }
     }
-
 }
