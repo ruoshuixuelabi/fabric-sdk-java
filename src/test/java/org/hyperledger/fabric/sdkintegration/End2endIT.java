@@ -362,7 +362,6 @@ public class End2endIT {
     }
     Map<String, Long> expectedMoveRCMap = new HashMap<>(); // map from channel name to move chaincode's return code.
     //CHECKSTYLE.OFF: Method length is 320 lines (max allowed is 150).
-
     /**
      * 运行初始化的Channel
      * @param client HFClient客户端
@@ -460,6 +459,9 @@ public class End2endIT {
                     // For inputstream if indicies are desired the application needs to make sure the META-INF is provided in the stream.
                     // The SDK does not change anything in the stream.
                     if (CHAIN_CODE_LANG.equals(Type.GO_LANG)) {
+                        System.out.println("安装bar这个通道,并且是go类型的链码,我找到的链码的路径是"+
+                                Paths.get(TEST_FIXTURES_PATH, CHAIN_CODE_FILEPATH, "src", CHAIN_CODE_PATH)+
+                                "另外的一个是Paths.get(\"src\", CHAIN_CODE_PATH)="+Paths.get("src", CHAIN_CODE_PATH));
                         installProposalRequest.setChaincodeInputStream(Util.generateTarGzInputStream(
                                 (Paths.get(TEST_FIXTURES_PATH, CHAIN_CODE_FILEPATH, "src", CHAIN_CODE_PATH).toFile()),
                                 Paths.get("src", CHAIN_CODE_PATH).toString()));
@@ -858,8 +860,9 @@ public class End2endIT {
         System.out.println("Channel创建成功了,Channel="+newChannel);
         boolean everyother = true; //test with both cases when doing peer eventing.
         for (String peerName : sampleOrg.getPeerNames()) {
+            System.out.println("创建通道的时候获取到的每一个Peer的名字peerName="+peerName);
             String peerLocation = sampleOrg.getPeerLocation(peerName);
-            System.out.println("获取到的peerLocation="+peerLocation);
+            System.out.println("创建通道的时候获取到的peerLocation="+peerLocation);
             Properties peerProperties = testConfig.getPeerProperties(peerName); //test properties for peer.. if any.
             for (String key : peerProperties.stringPropertyNames()) {
                 System.out.println("获取到peerProperties="+key + "=" + peerProperties.getProperty(key));
@@ -873,10 +876,10 @@ public class End2endIT {
             //创建新的Peer节点
             Peer peer = client.newPeer(peerName, peerLocation, peerProperties);
             if (testConfig.isFabricVersionAtOrAfter("1.3")) {
-                System.out.println("和1.3版本的关系满足条件");
+                System.out.println("创建新的Peer节点之后和1.3版本的关系满足条件");
                 newChannel.joinPeer(peer, createPeerOptions().setPeerRoles(EnumSet.of(PeerRole.ENDORSING_PEER, PeerRole.LEDGER_QUERY, PeerRole.CHAINCODE_QUERY, PeerRole.EVENT_SOURCE))); //Default is all roles.
             } else {
-                System.out.println("另外一条路加入节点");
+                System.out.println("创建新的Peer节点不满足1.3的条件");
                 if (doPeerEventing && everyother) {
                     System.out.println("满足条件doPeerEventing && everyother");
                     newChannel.joinPeer(peer, createPeerOptions().setPeerRoles(EnumSet.of(PeerRole.ENDORSING_PEER, PeerRole.LEDGER_QUERY, PeerRole.CHAINCODE_QUERY, PeerRole.EVENT_SOURCE))); //Default is all roles.
@@ -894,6 +897,7 @@ public class End2endIT {
         if (doPeerEventing || testConfig.isFabricVersionAtOrAfter("1.3")) {
             System.out.println("doPeerEventing || testConfig.isFabricVersionAtOrAfter(\"1.3\")是满足的");
             // Make sure there is one of each type peer at the very least.
+            //确保每一个通道里面至少有1个peer
             assertFalse(newChannel.getPeers(EnumSet.of(PeerRole.EVENT_SOURCE)).isEmpty());
             assertFalse(newChannel.getPeers(PeerRole.NO_EVENT_SOURCE).isEmpty());
         }
@@ -911,7 +915,6 @@ public class End2endIT {
                     eventHubProperties);
             newChannel.addEventHub(eventHub);
         }
-
         newChannel.initialize();
         out("Finished initialization channel %s", name);
         System.out.println("newChannel初始化成功"+name);
