@@ -109,9 +109,6 @@ public class End2endAndBackAgainIT {
      * @param ccName 链码的名字
      * @param ccPath 链码的安装路径
      * @param ccVersion 链码的版本
-     * @return
-     * @throws InvalidArgumentException
-     * @throws ProposalException
      */
     private static boolean checkInstalledChaincode(HFClient client, Peer peer, String ccName, String ccPath, String ccVersion)
             throws InvalidArgumentException, ProposalException {
@@ -135,14 +132,11 @@ public class End2endAndBackAgainIT {
     }
     /**
      * 检查是否实例化了链码
-     * @param channel
-     * @param peer
-     * @param ccName
-     * @param ccPath
-     * @param ccVersion
-     * @return
-     * @throws InvalidArgumentException
-     * @throws ProposalException
+     * @param channel 通道的实例
+     * @param peer peer的实例
+     * @param ccName 链码的名字
+     * @param ccPath 链码的路径
+     * @param ccVersion 链码的版本
      */
     private static boolean checkInstantiatedChaincode(Channel channel, Peer peer, String ccName, String ccPath, String ccVersion) throws InvalidArgumentException, ProposalException {
         out("Checking instantiated chaincode: %s, at version: %s, on peer: %s", ccName, ccVersion, peer.getName());
@@ -195,6 +189,7 @@ public class End2endAndBackAgainIT {
 //                sampleStoreFile.delete();
 //            }
             sampleStore = new SampleStore(sampleStoreFile);
+            System.out.println("运行的时候获取到的sampleStore="+sampleStore);
             setupUsers(sampleStore);
             runFabricTest(sampleStore);
         } catch (Exception e) {
@@ -214,10 +209,10 @@ public class End2endAndBackAgainIT {
         //获取所示例组织里面的成员
         for (SampleOrg sampleOrg : testSampleOrgs) {
             final String orgName = sampleOrg.getName();
-            System.out.println("sampleStore="+sampleStore);
+            System.out.println("登记用户时候的sampleStore="+sampleStore);
             //从sampleStore获取Member,这里肯定获取不到,而是内部自己创建了一个
             SampleUser admin = sampleStore.getMember(TEST_ADMIN_NAME, orgName);
-            System.out.println("获取到的admin="+admin);
+            System.out.println("登记用户时候获取到的admin="+admin);
             sampleOrg.setAdmin(admin); // The admin of this org.
             // No need to enroll or register all done in End2endIt !
             SampleUser user = sampleStore.getMember(TESTUSER_1_NAME, orgName);
@@ -229,11 +224,14 @@ public class End2endAndBackAgainIT {
         ////////////////////////////
         // Setup client
         //Create instance of client.
+        //创建客户端的实例
         HFClient client = HFClient.createNewInstance();
         client.setCryptoSuite(CryptoSuite.Factory.getCryptoSuite());
         ////////////////////////////
         //Reconstruct and run the channels
+        //获取peerOrg1这个组织
         SampleOrg sampleOrg = testConfig.getIntegrationTestsSampleOrg("peerOrg1");
+        //重新构建通道foo
         Channel fooChannel = reconstructChannel(FOO_CHANNEL_NAME, client, sampleOrg);
         runChannel(client, fooChannel, sampleOrg, 0);
         assertFalse(fooChannel.isShutdown());
@@ -314,15 +312,12 @@ public class End2endAndBackAgainIT {
                     ////////////////////////////
                     // only a client from the same org as the peer can issue an install request
                     int numInstallProposal = 0;
-
                     Collection<ProposalResponse> responses;
                     final Collection<ProposalResponse> successful = new LinkedList<>();
                     final Collection<ProposalResponse> failed = new LinkedList<>();
                     Collection<Peer> peersFromOrg = channel.getPeers();
                     numInstallProposal = numInstallProposal + peersFromOrg.size();
-
                     responses = client.sendInstallProposal(installProposalRequest, peersFromOrg);
-
                     for (ProposalResponse response : responses) {
                         if (response.getStatus() == Status.SUCCESS) {
                             out("Successful install proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
@@ -331,47 +326,34 @@ public class End2endAndBackAgainIT {
                             failed.add(response);
                         }
                     }
-
                     out("Received %d install proposal responses. Successful+verified: %d . Failed: %d", numInstallProposal, successful.size(), failed.size());
-
                     if (failed.size() > 0) {
                         ProposalResponse first = failed.iterator().next();
                         fail("Not enough endorsers for install :" + successful.size() + ".  " + first.getMessage());
                     }
-
                     //////////////////
                     // Upgrade chaincode to ***double*** our move results.
-
                     if (changeContext) {
                         installProposalRequest.setUserContext(sampleOrg.getPeerAdmin());
                     }
-
                     UpgradeProposalRequest upgradeProposalRequest = client.newUpgradeProposalRequest();
                     upgradeProposalRequest.setChaincodeID(chaincodeID_11);
                     upgradeProposalRequest.setProposalWaitTime(DEPLOYWAITTIME);
                     upgradeProposalRequest.setFcn("init");
                     upgradeProposalRequest.setArgs(new String[] {});    // no arguments don't change the ledger see chaincode.
-
                     ChaincodeEndorsementPolicy chaincodeEndorsementPolicy;
-
                     chaincodeEndorsementPolicy = new ChaincodeEndorsementPolicy();
                     chaincodeEndorsementPolicy.fromYamlFile(new File(TEST_FIXTURES_PATH + "/sdkintegration/chaincodeendorsementpolicy.yaml"));
-
                     upgradeProposalRequest.setChaincodeEndorsementPolicy(chaincodeEndorsementPolicy);
                     Map<String, byte[]> tmap = new HashMap<>();
                     tmap.put("test", "data".getBytes());
                     upgradeProposalRequest.setTransientMap(tmap);
-
                     if (changeContext) {
                         upgradeProposalRequest.setUserContext(sampleOrg.getPeerAdmin());
                     }
-
                     out("Sending upgrade proposal");
-
                     Collection<ProposalResponse> responses2;
-
                     responses2 = channel.sendUpgradeProposal(upgradeProposalRequest);
-
                     successful.clear();
                     failed.clear();
                     for (ProposalResponse response : responses2) {
@@ -382,15 +364,12 @@ public class End2endAndBackAgainIT {
                             failed.add(response);
                         }
                     }
-
                     out("Received %d upgrade proposal responses. Successful+verified: %d . Failed: %d", channel.getPeers().size(), successful.size(), failed.size());
-
                     if (failed.size() > 0) {
                         ProposalResponse first = failed.iterator().next();
                         throw new AssertionError("Not enough endorsers for upgrade :"
                                 + successful.size() + ".  " + first.getMessage());
                     }
-
                     if (changeContext) {
                         return channel.sendTransaction(successful, sampleOrg.getPeerAdmin()).get(testConfig.getTransactionWaitTime(), TimeUnit.SECONDS);
                     } else {
@@ -504,47 +483,38 @@ public class End2endAndBackAgainIT {
             }
             return channel.sendTransaction(successful);
         } catch (Exception e) {
-
             throw new CompletionException(e);
-
         }
-
     }
-
+    /**
+     * 重建通道
+     * @param name 通道的名字
+     * @param client 客户端对象
+     * @param sampleOrg 组织对象
+     */
     private Channel reconstructChannel(String name, HFClient client, SampleOrg sampleOrg) throws Exception {
         out("Reconstructing %s channel", name);
-
         client.setUserContext(sampleOrg.getUser(TESTUSER_1_NAME));
-
         Channel newChannel;
-
         if (BAR_CHANNEL_NAME.equals(name)) { // bar channel was stored in samplestore in End2endIT testcase.
-
             /**
              *  sampleStore.getChannel uses {@link HFClient#deSerializeChannel(byte[])}
              */
             newChannel = sampleStore.getChannel(client, name);
-
             if (!IS_FABRIC_V10) {
                 // Make sure there is one of each type peer at the very least. see End2end for how peers were constructed.
                 assertFalse(newChannel.getPeers(EnumSet.of(PeerRole.EVENT_SOURCE)).isEmpty());
                 assertFalse(newChannel.getPeers(PeerRole.NO_EVENT_SOURCE).isEmpty());
-
             }
             assertEquals(testConfig.isFabricVersionAtOrAfter("1.3") ? 0 : 2, newChannel.getEventHubs().size());
             out("Retrieved channel %s from sample store.", name);
-
         } else {
-
             newChannel = client.newChannel(name);
-
             for (String ordererName : sampleOrg.getOrdererNames()) {
                 newChannel.addOrderer(client.newOrderer(ordererName, sampleOrg.getOrdererLocation(ordererName),
                         testConfig.getOrdererProperties(ordererName)));
             }
-
             boolean everyOther = false;
-
             for (String peerName : sampleOrg.getPeerNames()) {
                 String peerLocation = sampleOrg.getPeerLocation(peerName);
                 Properties peerProperties = testConfig.getPeerProperties(peerName);
@@ -553,13 +523,10 @@ public class End2endAndBackAgainIT {
                         everyOther ?
                                 createPeerOptions().registerEventsForBlocks().setPeerRoles(EnumSet.of(PeerRole.ENDORSING_PEER, PeerRole.LEDGER_QUERY, PeerRole.CHAINCODE_QUERY, PeerRole.EVENT_SOURCE)) :
                                 createPeerOptions().registerEventsForFilteredBlocks().setPeerRoles(EnumSet.of(PeerRole.ENDORSING_PEER, PeerRole.LEDGER_QUERY, PeerRole.CHAINCODE_QUERY, PeerRole.EVENT_SOURCE));
-
                 newChannel.addPeer(peer, IS_FABRIC_V10 ?
                         createPeerOptions().setPeerRoles(EnumSet.of(PeerRole.ENDORSING_PEER, PeerRole.LEDGER_QUERY, PeerRole.CHAINCODE_QUERY)) : peerEventingOptions);
-
                 everyOther = !everyOther;
             }
-
             //For testing mix it up. For v1.1 use just peer eventing service for foo channel.
             if (IS_FABRIC_V10) {
                 //Should have no peers with event sources.
@@ -573,17 +540,14 @@ public class End2endAndBackAgainIT {
                 }
             } else {
                 //Peers should have all roles. Do some sanity checks that they do.
-
                 //Should have two peers with event sources.
                 assertEquals(2, newChannel.getPeers(EnumSet.of(PeerRole.EVENT_SOURCE)).size());
                 //Check some other roles too..
                 assertEquals(2, newChannel.getPeers(EnumSet.of(PeerRole.CHAINCODE_QUERY, PeerRole.LEDGER_QUERY)).size());
                 assertEquals(2, newChannel.getPeers(PeerRole.ALL).size());  //really same as newChannel.getPeers()
             }
-
             assertEquals(IS_FABRIC_V10 ? sampleOrg.getEventHubNames().size() : 0, newChannel.getEventHubs().size());
         }
-
         //Just some sanity check tests
         assertTrue(newChannel == client.getChannel(name));
         assertTrue(client == TestUtils.getField(newChannel, "client"));
@@ -593,17 +557,12 @@ public class End2endAndBackAgainIT {
         assertFalse(newChannel.isShutdown());
         assertFalse(newChannel.isInitialized());
         byte[] serializedChannelBytes = newChannel.serializeChannel();
-
         //Just checks if channel can be serialized and deserialized .. otherwise this is just a waste :)
         // Get channel back.
-
         newChannel.shutdown(true);
         newChannel = client.deSerializeChannel(serializedChannelBytes);
-
         assertEquals(2, newChannel.getPeers().size());
-
         assertEquals(1, newChannel.getOrderers().size());
-
         assertNotNull(client.getChannel(name));
         assertEquals(newChannel, client.getChannel(name));
         assertFalse(newChannel.isInitialized());
@@ -612,9 +571,7 @@ public class End2endAndBackAgainIT {
         newChannel.initialize();
         assertTrue(newChannel.isInitialized());
         assertFalse(newChannel.isShutdown());
-
         //Begin tests with de-serialized channel.
-
         //Query the actual peer for which channels it belongs to and check it belongs to this channel
         for (Peer peer : newChannel.getPeers()) {
             Set<String> channels = client.queryChannels(peer);

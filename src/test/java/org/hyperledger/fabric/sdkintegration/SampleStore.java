@@ -74,7 +74,6 @@ public class SampleStore {
         Properties properties = loadProperties();
         return properties.containsKey(name);
     }
-
     /**
      * 加载配置文件属性
      * @return

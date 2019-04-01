@@ -42,7 +42,6 @@ import org.hyperledger.fabric.sdk.exception.ProposalException;
 import org.hyperledger.fabric.sdk.exception.TransactionEventException;
 import org.hyperledger.fabric.sdk.security.CryptoSuite;
 import org.hyperledger.fabric.sdk.testutils.TestConfig;
-import org.hyperledger.fabric_ca.sdk.EnrollmentRequest;
 import org.hyperledger.fabric_ca.sdk.HFCAClient;
 import org.hyperledger.fabric_ca.sdk.HFCAInfo;
 import org.hyperledger.fabric_ca.sdk.RegistrationRequest;
@@ -181,6 +180,7 @@ public class End2endIT {
         //   MUST be replaced with more robust application implementation  (Database, LDAP)
         //每一次测试都要判断该文件是否存在,如果存在就删除
         if (sampleStoreFile.exists()) { //For testing start fresh
+            System.out.println("每次测试的时候都会");
             sampleStoreFile.delete();
         }
         //新创建例子的存储
@@ -243,6 +243,7 @@ public class End2endIT {
     }
     /**
      * 将要注册和背书(登记)用户持久化他们到samplestore
+     * enroll:登记账号
      * Will register and enroll users persisting them to samplestore.
      * @param sampleStore
      * @throws Exception
@@ -269,24 +270,26 @@ public class End2endIT {
             //判断现在是否运行在TLS模式的下面
             System.out.println("判断当前的模式是否运行在TLS模式下面"+testConfig.isRunningFabricTLS());
             //目前系统没有使用TLS模式因此下面的判断会失败
-            if (testConfig.isRunningFabricTLS()) {
-                System.out.println("目前运行在TLS模式的下面");
-                //This shows how to get a client TLS certificate from Fabric CA
-                // we will use one client TLS certificate for orderer peers etc.
-                final EnrollmentRequest enrollmentRequestTLS = new EnrollmentRequest();
-                enrollmentRequestTLS.addHost("localhost");
-                enrollmentRequestTLS.setProfile("tls");
-                final Enrollment enroll = ca.enroll("admin", "adminpw", enrollmentRequestTLS);
-                final String tlsCertPEM = enroll.getCert();
-                final String tlsKeyPEM = getPEMStringFromPrivateKey(enroll.getKey());
-                final Properties tlsProperties = new Properties();
-                tlsProperties.put("clientKeyBytes", tlsKeyPEM.getBytes(UTF_8));
-                tlsProperties.put("clientCertBytes", tlsCertPEM.getBytes(UTF_8));
-                clientTLSProperties.put(sampleOrg.getName(), tlsProperties);
-                //Save in samplestore for follow on tests.
-                sampleStore.storeClientPEMTLCertificate(sampleOrg, tlsCertPEM);
-                sampleStore.storeClientPEMTLSKey(sampleOrg, tlsKeyPEM);
-            }
+//            if (testConfig.isRunningFabricTLS()) {
+//                System.out.println("目前运行在TLS模式的下面");
+//                //This shows how to get a client TLS certificate from Fabric CA
+//                // we will use one client TLS certificate for orderer peers etc.
+//                final EnrollmentRequest enrollmentRequestTLS = new EnrollmentRequest();
+//                enrollmentRequestTLS.addHost("localhost");
+//                enrollmentRequestTLS.setProfile("tls");
+//                final Enrollment enroll = ca.enroll("admin", "adminpw", enrollmentRequestTLS);
+//                final String tlsCertPEM = enroll.getCert();
+//                final String tlsKeyPEM = getPEMStringFromPrivateKey(enroll.getKey());
+//                final Properties tlsProperties = new Properties();
+//                //keyfile:客户端私钥文件
+//                tlsProperties.put("clientKeyBytes", tlsKeyPEM.getBytes(UTF_8));
+//                //certfile:客户端证书文件
+//                tlsProperties.put("clientCertBytes", tlsCertPEM.getBytes(UTF_8));
+//                clientTLSProperties.put(sampleOrg.getName(), tlsProperties);
+//                //Save in samplestore for follow on tests.
+//                sampleStore.storeClientPEMTLCertificate(sampleOrg, tlsCertPEM);
+//                sampleStore.storeClientPEMTLSKey(sampleOrg, tlsKeyPEM);
+//            }
             //上面TLS模式下的代码默认不执行的,直接会执行这里的代码
             //获取HFCAClient的信息HFCAInfo
             HFCAInfo info = ca.info(); //just check if we connect at all.
@@ -306,6 +309,7 @@ public class End2endIT {
             System.out.println("SampleUser成员是admin="+admin);
             System.out.println("admin.isEnrolled()背书情况是="+admin.isEnrolled());
             //如果没有注册背书,那就设置注册背书的属性
+            //判断admin是否登记,如果没登记就设置
             if (!admin.isEnrolled()) {  //Preregistered admin only needs to be enrolled with Fabric caClient.
                 System.out.println("开始设置背书人admin.getName()="+admin.getName());
                 admin.setEnrollment(ca.enroll(admin.getName(), "adminpw"));
@@ -316,6 +320,7 @@ public class End2endIT {
             SampleUser user = sampleStore.getMember(testUser1, sampleOrg.getName());
             System.out.println("测试用户的成员是user="+user);
             System.out.println("目前的这个用户是否已经注册="+user.isRegistered());
+            //判断用户的注册,没注册就注册一下
             if (!user.isRegistered()) {  // users need to be registered AND enrolled
                 System.out.println("目前没有注册,因此下面开始执行注册的步骤");
                 //TODO 目前不知道org1.department1是做什么的
@@ -768,7 +773,6 @@ public class End2endIT {
             if (chaincodeEventListenerHandle != null) {
                 channel.unregisterChaincodeEventListener(chaincodeEventListenerHandle);
                 //Should be two. One event in chaincode and two notification for each of the two event hubs
-
                 final int numberEventsExpected = channel.getEventHubs().size() +
                         channel.getPeers(EnumSet.of(PeerRole.EVENT_SOURCE)).size();
                 //just make sure we get the notifications.

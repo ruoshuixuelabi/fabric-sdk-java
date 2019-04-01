@@ -164,7 +164,6 @@ public class TestConfig {
                     sampleOrg.addOrdererLocation(nl[0], grpcTLSify(nl[1]));
                 }
                 if (isFabricVersionBefore("1.3")) { // Eventhubs supported.
-
                     String eventHubNames = sdkProperties.getProperty(INTEGRATIONTESTS_ORG + orgName + ".eventhub_locations");
                     ps = eventHubNames.split("[ \t]*,[ \t]*");
                     for (String peer : ps) {
@@ -201,9 +200,20 @@ public class TestConfig {
         }
         return true;
     }
+
+    /**
+     * 判断FabricVersion的版本是否早于给定值
+     * @param version
+     * @return
+     */
     public boolean isFabricVersionBefore(String version) {
         return !isFabricVersionAtOrAfter(version);
     }
+    /**
+     * 解析版本号
+     * @param version
+     * @return
+     */
     private static int[] parseVersion(String version) {
         if (null == version || version.isEmpty()) {
             throw new AssertionError("Version is bad :" + version);
@@ -221,9 +231,7 @@ public class TestConfig {
             ret[i] = 0;
         }
         return ret;
-
     }
-
     private String grpcTLSify(String location) {
         location = location.trim();
         Exception e = Utils.checkGrpcUrl(location);
@@ -232,12 +240,10 @@ public class TestConfig {
         }
         return runningFabricTLS ?
                 location.replaceFirst("^grpc://", "grpcs://") : location;
-
     }
     private String httpTLSify(String location) {
         location = location.trim();
-        return runningFabricCATLS ?
-                location.replaceFirst("^http://", "https://") : location;
+        return runningFabricCATLS ?location.replaceFirst("^http://", "https://") : location;
     }
     /**
      * getConfig return back singleton for SDK configuration.
@@ -255,14 +261,11 @@ public class TestConfig {
     }
     /**
      * getProperty return back property for the given value.
-     *
      * @param property
      * @return String value for the property
      */
     private String getProperty(String property) {
-
         String ret = sdkProperties.getProperty(property);
-
         if (null == ret) {
             logger.warn(String.format("No configuration value found for '%s'", property));
         }
@@ -299,15 +302,12 @@ public class TestConfig {
     public int getDeployWaitTime() {
         return Integer.parseInt(getProperty(DEPLOYWAITTIME));
     }
-
     public long getProposalWaitTime() {
         return Integer.parseInt(getProperty(PROPOSALWAITTIME));
     }
-
     public boolean getRunIdemixMTTest() {
         return Boolean.valueOf(getProperty(RUNIDEMIXMTTEST));
     }
-
     /**
      * 获得整合的测试组织样例
      * @return

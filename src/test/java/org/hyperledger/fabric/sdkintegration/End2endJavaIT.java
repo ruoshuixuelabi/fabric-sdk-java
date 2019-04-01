@@ -41,10 +41,16 @@ public class End2endJavaIT extends End2endIT {
         // block walker depends on the state of the chain after go's end2end. Nothing here is language specific so
         // there is no loss in coverage for not doing this.
     }
+
+    /**
+     * 真正执行的测试方法
+     * @throws Exception
+     */
     @Override
     @Test
     public void setup() throws Exception {
         sampleStore = new SampleStore(sampleStoreFile);
+        //注册登记用户
         enrollUsersSetup(sampleStore);
         runFabricTest(sampleStore); // just run fabric tests.
     }
