@@ -13,6 +13,15 @@ import org.hyperledger.fabric.shim.ChaincodeStub;
 import static java.nio.charset.StandardCharsets.UTF_8;
 public class SimpleChaincode extends ChaincodeBase {
     private static Log _logger = LogFactory.getLog(SimpleChaincode.class);
+    //用户1的公钥
+    private  static  String  publicKey1="";
+    //用户2的公钥
+    private  static  String publicKey2="";
+    /**
+     * 链码初始化的方法,初始化的时候保存用户的公钥
+     * @param stub
+     * @return
+     */
     @Override
     public Response init(ChaincodeStub stub) {
         try {
@@ -26,22 +35,30 @@ public class SimpleChaincode extends ChaincodeBase {
                 newErrorResponse("Incorrect number of arguments. Expecting 4");
             }
             // Initialize the chaincode
-            //取出第一个参数
-            String account1Key = args.get(0);
+            //取出第一个参数,第一个参数是用户1的公钥
+            publicKey1 = args.get(0);
+            //第二个参数是用户2的公钥
+            publicKey2 = args.get(1);
+            if(publicKey1==null||"".equals(publicKey1)){
+                newErrorResponse("can shu 1 bu neng wei kong ");
+            }
+            if(publicKey2==null||"".equals(publicKey2)){
+                newErrorResponse("can shu 2 bu neng wei kong ");
+            }
             //取出第二个参数,这个参数是第一个参数的值,第一个参数是key
             // int account1Value = Integer.parseInt(args.get(1));
             //取出第三个参数,是第二个key
-            String account2Key = args.get(2);
-            int account2Value = Integer.parseInt(args.get(3));
-            Gson Gson=new Gson();
-            Map map=new HashMap();
-            map.put("name","zhangsan");
-            map.put("name1","zhangsan");
-            byte[] creator = stub.getCreator();
-            System.out.println("打印到的证书="+new String(creator,"UTF-8"));
-            _logger.info(String.format("account %s, value = %s; account %s, value %s", account1Key, args.get(1), account2Key, account2Value));
-            stub.putStringState(account1Key, Gson.toJson(map));
-            stub.putStringState(account2Key, args.get(3));
+//            String account2Key = args.get(2);
+//            int account2Value = Integer.parseInt(args.get(3));
+//            Gson Gson=new Gson();
+//            Map map=new HashMap();
+//            map.put("name","zhangsan");
+//            map.put("name1","zhangsan");
+//            byte[] creator = stub.getCreator();
+//            System.out.println("打印到的证书="+new String(creator,"UTF-8"));
+//            _logger.info(String.format("account %s, value = %s; account %s, value %s", account1Key, args.get(1), account2Key, account2Value));
+//            stub.putStringState(account1Key, Gson.toJson(map));
+//            stub.putStringState(account2Key, args.get(3));
             return newSuccessResponse();
         } catch (Throwable e) {
             return newErrorResponse(e);
@@ -71,40 +88,19 @@ public class SimpleChaincode extends ChaincodeBase {
         if (args.size() != 3) {
             return newErrorResponse("Incorrect number of arguments. Expecting 3");
         }
-        //取出第一个参数,这个参数代表从哪个key移动值
+        //第一个参数代表key值,要存储的
         String accountFromKey = args.get(0);
-        //取出第二个参数,这个参数代表移动到哪个key
-        String accountToKey = args.get(1);
-        //获取第一个参数对应的值,key对应的value
-        String accountFromValueStr = stub.getStringState(accountFromKey);
-        System.out.println("打印的参数是"+accountFromValueStr);
-        _logger.info(new String("获取到的参数的对应值是".getBytes(),"UTF-8")+accountFromValueStr);
-        byte[] creator = stub.getCreator();
-        System.out.println("更新的时候打印到的证书="+new String(creator,"UTF-8"));
-        if (accountFromValueStr == null) {
-            return newErrorResponse(String.format("Entity %s not found", accountFromKey));
-        }
-        int accountFromValue =500;
-        try {
-            accountFromValue = Integer.parseInt(accountFromValueStr);
-        }catch (Exception e){
-
-        }
-        String accountToValueStr = stub.getStringState(accountToKey);
-        if (accountToValueStr == null) {
-            return newErrorResponse(String.format("Entity %s not found", accountToKey));
-        }
-        int accountToValue = Integer.parseInt(accountToValueStr);
-        int amount = Integer.parseInt(args.get(2));
-        if (amount > accountFromValue) {
-            return newErrorResponse(String.format("not enough money in account %s", accountFromKey));
-        }
-        accountFromValue -= amount;
-        accountToValue += amount;
-        _logger.info(String.format("new value of A: %s", accountFromValue));
-        _logger.info(String.format("new value of B: %s", accountToValue));
-        // stub.putStringState(accountFromKey, Integer.toString(accountFromValue));
-        stub.putStringState(accountToKey, Integer.toString(accountToValue));
+        //第二个参数代表随机数
+        String accountRanndom = args.get(1);
+        //第三个参数代表要加密的值value
+        String accountValue = args.get(2);
+        //第四个参数代表时间戳
+        String accountTimeStamp = args.get(3);
+        Gson gson=new Gson();
+        Map map=new HashMap();
+        //TODO 这里的accountValue要使用公钥计算出来
+        map.put(accountFromKey,accountValue);
+        stub.putStringState(accountFromKey, gson.toJson(map));
         _logger.info("Transfer complete");
         Map<String, byte[]> transientMap = stub.getTransient();
         if (null != transientMap) {
@@ -116,9 +112,6 @@ public class SimpleChaincode extends ChaincodeBase {
             }
         }
         return newSuccessResponse();
-//        return   newSuccessResponse("invoke finished successfully", ByteString.copyFrom(accountFromKey + ": " + accountFromValue + " " + accountToKey + ": " + accountToValue, UTF_8).
-//
-//                        toByteArray());
     }
     // Deletes an entity from state
     private Response delete(ChaincodeStub stub, List<String> args) {
